@@ -6,6 +6,9 @@ using UnityEngine;
 
 namespace MSD.EvaFollower
 {
+    /// <summary>
+    /// The object responsible for Patroling the kerbal.
+    /// </summary>
     class EvaPatrol : IEvaControlType
     {
 

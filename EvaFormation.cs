@@ -5,6 +5,9 @@ using System.Text;
 
 namespace MSD.EvaFollower
 {
+    /// <summary>
+    /// The object responsible for Formations.
+    /// </summary>
     class EvaFormation : IEvaControlType
     {
         private EvaContainer leader;

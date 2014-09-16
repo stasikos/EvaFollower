@@ -166,6 +166,11 @@ namespace MSD.EvaFollower
             _currentAnimationType = state;
         }
 
+        /// <summary>
+        /// Get the name of an animation from a AnimationState
+        /// </summary>
+        /// <param name="state"></param>
+        /// <returns></returns>
         private string GetAnimationName(AnimationState state)
         {
             string anim = "idle";
@@ -200,6 +205,10 @@ namespace MSD.EvaFollower
             return _eva.animation[anim].enabled && !_eva.isRagdoll;
         }
 
+        /// <summary>
+        /// Update the container. 
+        /// </summary>
+        /// <param name="geeForce"></param>
         public void Update(double geeForce)
         {
      

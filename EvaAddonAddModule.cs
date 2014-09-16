@@ -6,7 +6,9 @@ using UnityEngine;
 
 namespace MSD.EvaFollower
 {
-
+    /// <summary>
+    /// Add the module to all kerbals avaible. 
+    /// </summary>
     [KSPAddon(KSPAddon.Startup.SpaceCentre, true)]
     public class EvaAddonAddModule : MonoBehaviour
     {

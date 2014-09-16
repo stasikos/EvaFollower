@@ -64,10 +64,12 @@ namespace MSD.EvaFollower
 
         }
 
+        /// <summary>
+        /// Save pointer to helmet & visor meshes so helmet removal can restore them.
+        /// </summary>
         private void InitializeMeshes()
         {
-            // Save pointer to helmet & visor meshes so helmet removal can restore them.
-            foreach (SkinnedMeshRenderer smr
+           foreach (SkinnedMeshRenderer smr
                      in Resources.FindObjectsOfTypeAll(typeof(SkinnedMeshRenderer)))
             {
                 if (smr.name == "helmet")
@@ -76,13 +78,7 @@ namespace MSD.EvaFollower
                     visorMesh = smr.sharedMesh;
             }
         }
-
- 
-        public void Awake()
-        {
-                         
-        }
-
+        
 
         public void Destroy()
         {
@@ -118,9 +114,7 @@ namespace MSD.EvaFollower
         {
             //remove kerbal
             uint flightID = e.from.flightID;
-
             RemoveEva(flightID);
-
         }
 
         /// <summary>
@@ -252,6 +246,9 @@ namespace MSD.EvaFollower
 
         }
 
+        /// <summary>
+        /// Update the list of kerbals.
+        /// </summary>
         public void Update()
         {
             if (!FlightGlobals.ready || PauseMenu.isOpen)
@@ -503,9 +500,12 @@ namespace MSD.EvaFollower
             return Screen.height - y;
         }
 
+        /// <summary>
+        /// Draw the selection box.
+        /// </summary>
         private void OnGUI()
         {
-            if (_startClick != -Vector3.one)
+            if (_startClick != -Vector3.one && _selection.width != 0 && _selection.height != 0)
             {
                 GUI.color = new Color(1, 1, 1, 0.15f);      
                 GUI.DrawTexture(_selection, _selectionHighlight);
@@ -513,13 +513,21 @@ namespace MSD.EvaFollower
             
         }
 
-
+        /// <summary>
+        /// Update the selection model position.
+        /// </summary>
+        /// <param name="eva"></param>
         public void UpdateSelectionLine(KerbalEVA eva)
         {
             var lineRenderer = selectionLines[eva.name];
             SetSelectionLineProperties(eva, lineRenderer);            
         }
 
+        /// <summary>
+        /// Set the position of the selector. 
+        /// </summary>
+        /// <param name="eva"></param>
+        /// <param name="lineRenderer"></param>
         private void SetSelectionLineProperties(KerbalEVA eva, LineRenderer lineRenderer)
         {
             double v = 1.5 + Math.Sin(angle) * 0.25;
@@ -531,6 +539,10 @@ namespace MSD.EvaFollower
             lineRenderer.transform.rotation = r * Quaternion.Euler(0,(float)(angle*60.0),0);;
             lineRenderer.transform.position = p;
         }
+
+        /// <summary>
+        /// Set the properties of the target cursor.
+        /// </summary>
         private void SetCursorProperties()
         {
             double v = 1.5 + Math.Sin(angle) * 0.25 + Math.Sin(_animatedCursorValue)*2;
@@ -542,6 +554,9 @@ namespace MSD.EvaFollower
             SetCursorAnimation();
         }
 
+        /// <summary>
+        /// Display a little animation when target is clicked. 
+        /// </summary>
         private void SetCursorAnimation()
         {
             //little hackish... 
@@ -560,12 +575,18 @@ namespace MSD.EvaFollower
             }
         }
 
+        /// <summary>
+        /// Enable the cursor for rendering.
+        /// </summary>
         private void ShowCursor()
         {
             showCursor = true;
             _cursor.renderer.enabled = true;
         }
 
+        /// <summary>
+        /// Disable the cursor for rendering.
+        /// </summary>
         private void DisableCursor()
         {
             showCursor = false;
@@ -575,6 +596,10 @@ namespace MSD.EvaFollower
             _animatedCursorValue = 0;
         }
 
+        /// <summary>
+        /// Destroy the selection model for a specific kerbal.
+        /// </summary>
+        /// <param name="eva"></param>
         private void DestroyLine(KerbalEVA eva)
         {
 #if DEBUG
@@ -588,6 +613,10 @@ namespace MSD.EvaFollower
             }
         }
 
+        /// <summary>
+        /// Create a selection model for a specific kerbal.
+        /// </summary>
+        /// <param name="eva"></param>
         private void CreateLine(KerbalEVA eva)
         {
             if (selectionLines.ContainsKey(eva.name))
@@ -620,6 +649,12 @@ namespace MSD.EvaFollower
 
         }
 
+        /// <summary>
+        /// Create the circle model. 
+        /// </summary>
+        /// <param name="line"></param>
+        /// <param name="segments"></param>
+        /// <param name="width"></param>
         private void CreateCircle(LineRenderer line, int segments, double width)
         {
             double step = ((Math.PI * 2) / ((float)segments - 1));

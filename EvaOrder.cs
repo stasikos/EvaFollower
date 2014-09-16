@@ -6,6 +6,9 @@ using UnityEngine;
 
 namespace MSD.EvaFollower
 {
+    /// <summary>
+    /// The object responsible for ordering the kerbal around. 
+    /// </summary>
     class EvaOrder : IEvaControlType
     {
         public bool AllowRunning { get; set; }
