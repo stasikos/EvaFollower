@@ -102,7 +102,9 @@ namespace MSD.EvaFollower
         /// <param name="report"></param>
         public void OnCrewKilled(EventReport report)
         {
+#if DEBUG
             EvaDebug.DebugWarning(report.sender + " is dead!");
+#endif
             RemoveEva(report.origin.flightID);
         }
 
@@ -383,8 +385,6 @@ namespace MSD.EvaFollower
                     {
                         Vector3 camPos = Camera.main.WorldToScreenPoint(eva.EVA.transform.position);
                         camPos.y = InvertY(camPos.y);
-
-                        EvaDebug.DebugLog("Selection: [" + _selection.x + ", " + _selection.y + ", " + _selection.width + ", " + _selection.height + "]");
 
                         if (_selection.Contains(camPos))
                         {
