@@ -31,6 +31,7 @@ namespace MSD.EvaFollower
         private Quaternion _cursorRotation;
         private bool _animatedCursor = false;
         private float _animatedCursorValue = 0;
+        private int selectedKerbals = 0;
         
         //Should be bindable. 
         private int _selectMouseButton = 0;
@@ -258,16 +259,11 @@ namespace MSD.EvaFollower
 
             angle += 0.1;
 
-
-            int selectedKerbals = 0;
             double geeForce = FlightGlobals.currentMainBody.GeeASL;
             for (int i = _evaCollection.Count - 1; i >= 0; i--)
             {
                 EvaContainer v = _evaCollection[i];
-
-                if (v.Mode == Mode.None)
-                    continue;
-
+    
                 #region List Cleanup
                 if (v == null)
                 {
@@ -280,12 +276,20 @@ namespace MSD.EvaFollower
                 }
                 #endregion
 
-                #region Update EVA list
-
+                #region Don't wast any time.
                 if (v.Selected)
                 {
                     UpdateSelectionLine(v.EVA);
                 }
+
+                if (v.Mode == Mode.None)
+                {
+                    v.SetIdleAnimation();
+                    continue;
+                }
+                #endregion
+
+                #region Update EVA list
 
                 //Reset after lost contact, leader is death or gone. 
                 if (v.Mode == Mode.None)
@@ -301,25 +305,9 @@ namespace MSD.EvaFollower
 
             }
 
-            #region Cursor Visible...
-            //Show the cursor if more than one kerbal is selected. 
-            if (selectedKerbals > 0)
-            {
-                ShowCursor();
-            }
-            else
-            {
-                DisableCursor();
-            }
-            #endregion
             
             var activeVessel = FlightGlobals.ActiveVessel;
             var activeEVA = activeVessel.GetComponent<KerbalEVA>();
-
-            //unit vectors in the up (normal to planet surface), east, and north (parallel to planet surface) directions
-            //Vector3 eastUnit = activeVessel.mainBody.getRFrmVel(activeVessel.transform.position).normalized; //uses the rotation of the body's frame to determine "east"
-            //Vector3 upUnit = (activeVessel.transform.position - activeVessel.mainBody.position).normalized;
-            //Vector3 northUnit = Vector3d.Cross(upUnit, eastUnit); //north = up cross east
 
             if (!activeVessel.parts[0].GroundContact)
             {
@@ -336,16 +324,18 @@ namespace MSD.EvaFollower
                     if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out _cursorHit))
                     {
                         _cursorPosition = _cursorHit.point;
-                        _cursorRotation = activeVessel.transform.rotation;
-                        //Quaternion.eastUnit, upUnit, northUnit) ;
+
+                        float ang = Vector3.Angle(_cursorHit.normal, FlightGlobals.upAxis);
+
+                        _cursorRotation = Quaternion.Euler(_cursorHit.normal.x, _cursorHit.normal.y, _cursorHit.normal.z);
                     }
                 }
 
                 SetCursorProperties();
             }
             #endregion
-            #region Handle Orders
 
+            #region Handle Orders
             //Drag rectangle...
             #region Rectangle Handler
 
@@ -468,6 +458,18 @@ namespace MSD.EvaFollower
             #endregion
 
             #endregion
+
+            #region Cursor Visible...
+            //Show the cursor if more than one kerbal is selected. 
+            if (selectedKerbals > 0)
+            {
+                ShowCursor();
+            }
+            else
+            {
+                DisableCursor();
+            }
+            #endregion
         }
 
         /// <summary>
@@ -476,6 +478,7 @@ namespace MSD.EvaFollower
         /// <param name="_eva"></param>
         private void DeselectEva(EvaContainer _eva)
         {
+            ++selectedKerbals;
             _eva.Selected = false;
 
             //create circle line
@@ -489,6 +492,7 @@ namespace MSD.EvaFollower
         /// <param name="_eva"></param>
         private void SelectEva(EvaContainer _eva)
         {
+            --selectedKerbals;
             _eva.Selected = true;
 
             //create circle line

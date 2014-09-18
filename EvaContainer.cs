@@ -166,6 +166,12 @@ namespace MSD.EvaFollower
             _currentAnimationType = state;
         }
 
+        public void SetIdleAnimation()
+        {
+            Animate(AnimationState.Idle, false);
+            _currentAnimationType = AnimationState.Idle;
+        }
+
         /// <summary>
         /// Get the name of an animation from a AnimationState
         /// </summary>
