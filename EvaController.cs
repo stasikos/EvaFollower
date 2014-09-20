@@ -206,9 +206,12 @@ namespace MSD.EvaFollower
                     }
                 }
             }
-                  
-            if(deleteID >= 0)
+
+            if (deleteID >= 0)
+            {
+                DeselectEva(_evaCollection[deleteID]);
                 _evaCollection.RemoveAt(deleteID);
+            }
         }
 
         /// <summary>
@@ -258,6 +261,9 @@ namespace MSD.EvaFollower
                 return;
 
             angle += 0.1;
+          
+            var activeVessel = FlightGlobals.ActiveVessel;
+            var activeEVA = activeVessel.GetComponent<KerbalEVA>();
 
             double geeForce = FlightGlobals.currentMainBody.GeeASL;
             for (int i = _evaCollection.Count - 1; i >= 0; i--)
@@ -267,11 +273,13 @@ namespace MSD.EvaFollower
                 #region List Cleanup
                 if (v == null)
                 {
+                    EvaDebug.DebugLog("V == null");
                     //This will results in errors.. deleted at the end. 
                     _evaCollection.RemoveAt(i); continue;
                 }
                 if (v.EVA.part == null || v.EVA == null)
                 {
+                    EvaDebug.DebugLog("V.EVA == null");
                     _evaCollection.RemoveAt(i); continue;
                 }
                 #endregion
@@ -280,24 +288,32 @@ namespace MSD.EvaFollower
                 if (v.Selected)
                 {
                     UpdateSelectionLine(v.EVA);
-                }
-
+                }         
+                
                 if (v.Mode == Mode.None)
                 {
-                    v.SetIdleAnimation();
+                    if (v.CurrentAnimationType != AnimationState.Idle)
+                    {
+                        //Don't force the active vessel.
+                        if (activeEVA == null)
+                        {
+                            v.Animate(AnimationState.Idle, false);
+                        }
+                        else
+                        {
+                            if (v.FlightID != activeEVA.part.flightID)
+                            {
+                                v.Animate(AnimationState.Idle, false);
+                            }
+                        }
+                    }
+
                     continue;
                 }
+
                 #endregion
 
                 #region Update EVA list
-
-                //Reset after lost contact, leader is death or gone. 
-                if (v.Mode == Mode.None)
-                {
-                    v.Animate(AnimationState.Idle, false);
-                    continue;
-                }
-
 
                 v.Update(geeForce);
 
@@ -305,15 +321,6 @@ namespace MSD.EvaFollower
 
             }
 
-            
-            var activeVessel = FlightGlobals.ActiveVessel;
-            var activeEVA = activeVessel.GetComponent<KerbalEVA>();
-
-            if (!activeVessel.parts[0].GroundContact)
-            {
-                // No point.. Change this if you get jetpack working.
-                return;
-            }
 
             #region Handle Cursor...
             if (showCursor)
@@ -324,10 +331,7 @@ namespace MSD.EvaFollower
                     if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out _cursorHit))
                     {
                         _cursorPosition = _cursorHit.point;
-
-                        float ang = Vector3.Angle(_cursorHit.normal, FlightGlobals.upAxis);
-
-                        _cursorRotation = Quaternion.Euler(_cursorHit.normal.x, _cursorHit.normal.y, _cursorHit.normal.z);
+                        _cursorRotation = activeVessel.transform.rotation;
                     }
                 }
 
@@ -400,11 +404,14 @@ namespace MSD.EvaFollower
             EvaDebug.DebugLog("Check Collision...");
 #endif
 
+            
             RaycastHit hitInfo = new RaycastHit();
             bool hit = Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hitInfo);
 
             if (!hit)
+            {
                 return; //nothing to check.
+            }
 
             var evaCollision = hitInfo.transform.gameObject.GetComponent<KerbalEVA>();
 
@@ -412,7 +419,7 @@ namespace MSD.EvaFollower
 
             #region Handle Mouse Controls
             if (Input.GetMouseButtonDown(_selectMouseButton)) //Left button.)
-            {  
+            {
                 if (evaCollision != null)
                 {
                     //deselect all others.
@@ -428,6 +435,15 @@ namespace MSD.EvaFollower
 #endif
                     SelectEva(_eva);
 
+                }
+                else
+                {
+                    //get the kerbals in the selection.
+                    foreach (EvaContainer eva in _evaCollection)
+                    {
+                        DeselectEva(eva);
+                    }
+                    DisableCursor();
                 }
             }
 
@@ -478,7 +494,7 @@ namespace MSD.EvaFollower
         /// <param name="_eva"></param>
         private void DeselectEva(EvaContainer _eva)
         {
-            ++selectedKerbals;
+            --selectedKerbals;
             _eva.Selected = false;
 
             //create circle line
@@ -492,7 +508,7 @@ namespace MSD.EvaFollower
         /// <param name="_eva"></param>
         private void SelectEva(EvaContainer _eva)
         {
-            --selectedKerbals;
+            ++selectedKerbals;
             _eva.Selected = true;
 
             //create circle line
@@ -595,6 +611,7 @@ namespace MSD.EvaFollower
         {
             showCursor = false;
             _cursor.renderer.enabled = false;
+
             _cursor.SetColors(Color.green, Color.green);
             _animatedCursor = false;
             _animatedCursorValue = 0;

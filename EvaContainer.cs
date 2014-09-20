@@ -90,6 +90,12 @@ namespace MSD.EvaFollower
             get { return _order; }
             set { _order = value; }
         }
+                
+        public AnimationState CurrentAnimationType
+        {
+            get { return _currentAnimationType; }
+            set { _currentAnimationType = value; }
+        }
 
         /// <summary>
         /// Returns if the current kerbal is selected.
@@ -155,22 +161,15 @@ namespace MSD.EvaFollower
         public void Animate(AnimationState state, bool force)
         {           
             string anim = GetAnimationName(state);
-
+                        
             if (!string.IsNullOrEmpty(anim))
             {
-                //check the current animation.
-                if(!_eva.animation[anim].enabled)
-                    _eva.animation.CrossFade(anim);
+                _eva.animation.CrossFade(anim);
             }
 
             _currentAnimationType = state;
         }
 
-        public void SetIdleAnimation()
-        {
-            Animate(AnimationState.Idle, false);
-            _currentAnimationType = AnimationState.Idle;
-        }
 
         /// <summary>
         /// Get the name of an animation from a AnimationState
@@ -387,7 +386,15 @@ namespace MSD.EvaFollower
             }
 
             #endregion
-            
+
+            #region Reset Animation Mode Events
+
+            if (_evaMode == EvaFollower.Mode.None)
+            {
+                Animate(AnimationState.Idle, false);
+            }
+
+            #endregion
         }
     }
 }

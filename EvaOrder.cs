@@ -12,7 +12,7 @@ namespace MSD.EvaFollower
     class EvaOrder : IEvaControlType
     {
         public bool AllowRunning { get; set; }
-        private Vector3 position;
+        private Vector3d position;
 
         public EvaOrder()
         {
@@ -21,7 +21,7 @@ namespace MSD.EvaFollower
 
         public bool CheckDistance(double sqrDistance)
         {
-            bool complete = (sqrDistance < 1.6);
+            bool complete = (sqrDistance < 0.5);
             
             return complete;
         }

@@ -7,7 +7,7 @@ using SD = System.Diagnostics;
 
 namespace MSD.EvaFollower
 {
-    class EvaDebug : MonoBehaviour
+    class EvaDebug 
     {
         //Debug log yes/no
 #if DEBUG

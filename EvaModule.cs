@@ -86,24 +86,8 @@ namespace MSD.EvaFollower
         [KSPEvent(guiActive = true, guiName = "Debug", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
         public void Debug()
         {
-            var _eva = _currentKerbal.EVA;
-
-            var e = _eva.vessel.mainBody.GetWorldSurfacePosition(_eva.vessel.latitude, _eva.vessel.longitude, _eva.vessel.altitude);
-
-            var p = _eva.transform.position;
-            var r = _eva.transform.rotation;
-            var f = _eva.transform.forward;
-
-            // Vector3 currentPos = this.referenceBody.GetWorldSurfacePosition(SourceVessel.latitude, SourceVessel.longitude, SourceVessel.altitude);
-               
-
-            EvaDebug.DebugLog("P: " + p);
-            EvaDebug.DebugLog("R: " + r);
-            EvaDebug.DebugLog("F: " + f);
-            EvaDebug.DebugLog("E: " + e);
-
-
-            SetEvents();
+     
+            
         }
 #endif
            
