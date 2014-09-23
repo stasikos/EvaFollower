@@ -11,7 +11,6 @@ namespace MSD.EvaFollower
     class EvaFormation : IEvaControlType
     {
         private EvaContainer leader;
-        private FormationType type = FormationType.None;
 
         public EvaContainer Leader
         {
@@ -19,12 +18,6 @@ namespace MSD.EvaFollower
             set { leader = value; }
         }
 
-        public FormationType FormationType
-        {
-            get { return type; }
-            set { type = value; }
-        }
-        
         /// <summary>
         /// Get the next position to walk to. 
         /// Formation should handle differents positions.
@@ -36,8 +29,7 @@ namespace MSD.EvaFollower
            
             if (leader == null)
             {
-                //is follower but no leader?
-                EvaDebug.DebugWarning("GetNextTarget(). leader == null");
+                //EvaDebug.DebugWarning("GetNextTarget(). leader == null");
                 return;
             }
             

@@ -11,11 +11,9 @@ namespace MSD.EvaFollower
     /// </summary>
     class EvaModule : PartModule
     {
-        [KSPField(isPersistant = true)]
-        bool showHelmet = false;
-
         EvaContainer _currentKerbal;
-        
+        bool showHelmet = true;
+
         [KSPEvent(guiActive = true, guiName = "Follow Me", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
         public void Follow()
         {
@@ -41,10 +39,14 @@ namespace MSD.EvaFollower
         {
              Vector3d position = _currentKerbal.EVA.vessel.GetWorldPos3D();
             _currentKerbal.Patrol.Move(position);
-            
-#if DEBUG
-            EvaDebug.DebugWarning("Added Waypoint: " + position.ToString());
-#endif
+        }
+
+        [KSPEvent(guiActive = true, guiName = "Wait", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
+        public void Wait()
+        {
+            Vector3d position = _currentKerbal.EVA.vessel.GetWorldPos3D();
+            _currentKerbal.Patrol.Wait(position);
+            SetEvents();
         }
 
 
@@ -79,18 +81,87 @@ namespace MSD.EvaFollower
         public void ToggleHelmet()
         {
             showHelmet = !showHelmet;
-            UpdateHelmet();
+            _currentKerbal.EVA.ShowHelmet(showHelmet);
         }
 
-#if DEBUG
+        [KSPEvent(guiActive = true, guiName = "Jump", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
+        public void Jump()
+        {
+            _currentKerbal.EVA.Jump();
+        }
+
+        [KSPEvent(guiActive = true, guiName = "Ladder Grab", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
+        public void LadderGrab()
+        {
+            _currentKerbal.EVA.GrapLadder();
+        }
+
+        [KSPEvent(guiActive = true, guiName = "Pack Toggle", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
+        public void PackToggle()
+        {            
+            _currentKerbal.EVA.PackToggle();
+        }
+
+        [KSPEvent(guiActive = true, guiName = "FearFactor", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
+        public void FearFactor()
+        {
+            _currentKerbal.EVA.FearFactor(-1000000f);
+        }
+
+        [KSPEvent(guiActive = true, guiName = "FindKerbal", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
+        public void FindKerbal()
+        {
+            var expS = GameObject.FindObjectsOfType<Kerbal>();
+
+                foreach (var item in expS)
+                {
+
+                    EvaDebug.DebugLog("N: " + item.name);
+                    EvaDebug.DebugLog("C: " + item.courage);
+                    EvaDebug.DebugLog("S: " + item.stupidity);
+                    EvaDebug.DebugLog("B: " + item.isBadass);
+
+
+                    EvaDebug.DebugLog("C: " + item.gameObject.name);
+                }
+            
+        }
+      
+
         [KSPEvent(guiActive = true, guiName = "Debug", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
         public void Debug()
         {
-     
-            
+            _currentKerbal.Info();
+
+            EvaDebug.DebugLog("Current:");
+            foreach (var item in _currentKerbal.EVA.fsm.CurrentState.StateEvents)
+            {
+                EvaDebug.DebugLog(item.name);
+            }
+            EvaDebug.DebugLog("Last:");
+            foreach (var item in _currentKerbal.EVA.fsm.LastState.StateEvents)
+            {
+                EvaDebug.DebugLog(item.name);
+            }
+
+            var expS = UnityEngine.Object.FindObjectsOfType<kerbalExpressionSystem>();
+
+            foreach (var item in expS)
+            {
+                EvaDebug.DebugLog(item.name);
+                EvaDebug.DebugLog("panicLevel:" + item.panicLevel);
+                EvaDebug.DebugLog("fearFactor:" + item.fearFactor);
+                EvaDebug.DebugLog("expression:" + item.expression);
+                EvaDebug.DebugLog("expressionParameterName:" + item.expressionParameterName);
+                EvaDebug.DebugLog("varianceParameterName:" + item.varianceParameterName);
+                EvaDebug.DebugLog("secondaryVarianceParameterName:" + item.secondaryVarianceParameterName);
+
+                item.fearFactor = 100;
+            }
+
         }
-#endif
-           
+
+                   
         public void Start()
         {
             EvaDebug.DebugLog("Loaded EvaModule.");
@@ -99,34 +170,11 @@ namespace MSD.EvaFollower
             GameEvents.onCrewOnEva.Add(new EventData<GameEvents.FromToAction<Part, Part>>.OnEvent(OnCrewOnEva));
             GameEvents.onVesselChange.Add(new EventData<Vessel>.OnEvent(onVesselChange));
             GameEvents.onFlightReady.Add(new EventVoid.OnEvent(onFlightReadyCallback));
-            GameEvents.onVesselLoaded.Add(new EventData<Vessel>.OnEvent(onVesselLoaded));
         }
 
-        private void UpdateHelmet()
-        {
-            if (_currentKerbal == null)
-                return;
-            
-            if (_currentKerbal.EVA == null)
-                return;
-
-
-            foreach (Renderer renderer in _currentKerbal.EVA.GetComponentsInChildren<Renderer>())
-            {
-                var smr = renderer as SkinnedMeshRenderer;
-
-                if (smr != null)
-                {
-                    switch (smr.name)
-                    {
-                        case "helmet":smr.sharedMesh = showHelmet ? EvaController.helmetMesh : null; break;
-                        case "visor":smr.sharedMesh = showHelmet ?  EvaController.visorMesh : null;  break;
-                    }
-                }
-            }
-
-        }
-
+                /// <summary>
+        /// Set the events based on the kerbal status.
+        /// </summary>
         private void SetEvents()
         {
             if (_currentKerbal == null)
@@ -179,6 +227,7 @@ namespace MSD.EvaFollower
                 Events["Follow"].active = false;
                 Events["Stay"].active = false;
                 Events["SetPoint"].active = true;
+                Events["Wait"].active = true;
 
                 if (_currentKerbal.Mode != Mode.Patrol)
                 {
@@ -190,15 +239,20 @@ namespace MSD.EvaFollower
                 else
                 {
                     Events["SetPoint"].active = false;
+                    Events["Wait"].active = false;
                 }                
             }           
         }
 
+        /// <summary>
+        /// The default events based on the kerbal status.
+        /// </summary>
         private void ResetEvents()
         {
             Events["Follow"].active = false;
             Events["Stay"].active = false;
             Events["SetPoint"].active = false;
+            Events["Wait"].active = false;
             Events["Patrol"].active = false;
             Events["EndPatrol"].active = false;
             Events["PatrolRun"].active = false;
@@ -216,22 +270,8 @@ namespace MSD.EvaFollower
 
         public void onFlightReadyCallback()
         {
-#if DEBUG
-            EvaDebug.DebugLog("EvaModule.onFlightReadyCallback()");
-#endif
+            //initialize extentions.
             SetEvents();
-            UpdateHelmet();
-        }
-
-        public void onVesselLoaded(Vessel vessel)
-        {
-#if DEBUG
-            EvaDebug.DebugLog("EvaModule.onVesselLoaded()");
-#endif
-            if (part.flightID == vessel.parts[0].flightID)
-            {
-                UpdateHelmet();
-            }
         }
 
         public void onVesselChange(Vessel vessel)

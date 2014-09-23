@@ -30,18 +30,5 @@ namespace MSD.EvaFollower
         Idle,
     }
 
-    /// <summary>
-    /// The formation types avaible...
-    /// Don't know how to implement this, yet.
-    /// </summary>
-    public enum FormationType
-    {
-        None = 0,
-        Column = 1,
-        Line = 2, 
-        Wedge = 3, 
-        Vee = 4,
-        Block = 5,
-    }
 
 }

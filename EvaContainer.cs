@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using System.Collections;
+using System.Threading;
 
 namespace MSD.EvaFollower
 {
@@ -12,14 +14,17 @@ namespace MSD.EvaFollower
         private KerbalEVA _eva;
         private Part _part;
         private EvaModule _module;
+
         private AnimationState _currentAnimationType = AnimationState.None;
         private Mode _evaMode = Mode.None;
+
         private EvaFormation _formation = new EvaFormation();
         private EvaPatrol _patrol = new EvaPatrol();
         private EvaOrder _order = new EvaOrder();
-        private bool _selected = false;
-        
+
+        private bool _selected = false; 
         public bool _debug = false;
+
 
         /// <summary>
         /// The flight ID of the kerbal.
@@ -90,12 +95,7 @@ namespace MSD.EvaFollower
             get { return _order; }
             set { _order = value; }
         }
-                
-        public AnimationState CurrentAnimationType
-        {
-            get { return _currentAnimationType; }
-            set { _currentAnimationType = value; }
-        }
+               
 
         /// <summary>
         /// Returns if the current kerbal is selected.
@@ -106,17 +106,15 @@ namespace MSD.EvaFollower
             set { _selected = value; }
         }
 
-        public EvaContainer()
-        {
 
-        }
+
 
         public EvaContainer(Vessel vessel)
         {
-
             this.flightID = vessel.parts[0].flightID;
             this._part = vessel.parts[0];
             this._eva = ((KerbalEVA)_part.Modules["KerbalEVA"]);
+            
 
             this._formation = new EvaFormation();
 
@@ -124,6 +122,15 @@ namespace MSD.EvaFollower
             this._module = (EvaModule)_eva.GetComponent(typeof(EvaModule));
             this._module.Initialize(this);
 
+           
+        }
+   
+        public void Info()
+        {
+            foreach (KFSMEvent stateEvent in _eva.fsm.CurrentState.StateEvents)
+            {
+                    EvaDebug.DebugLog(stateEvent.name);                
+            }
         }
 
         /// <summary>

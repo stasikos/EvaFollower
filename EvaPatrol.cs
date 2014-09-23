@@ -16,32 +16,57 @@ namespace MSD.EvaFollower
         public List<PatrolAction> actions = new List<PatrolAction>();
         public int currentPatrolPoint = 0;
 
+        private float delta = 0;
+
         public bool CheckDistance(double sqrDistance)
         {
             bool complete = (sqrDistance < 0.3);
 
             if (complete)
             {
-                ++currentPatrolPoint;
+                PatrolAction currentPoint = actions[currentPatrolPoint];
 
-                if (currentPatrolPoint >= actions.Count)
-                    currentPatrolPoint = 0;
+                if (currentPoint.type == PatrolActionType.Wait)
+                {
+                    delta += Time.deltaTime;
+
+                    if (delta > currentPoint.delay)
+                    {
+                        SetNextPoint();
+                        delta = 0;
+                    }
+                }
+                else //move
+                {
+                    SetNextPoint();
+                }
             }
 
             return complete;
         }
 
+        private void SetNextPoint()
+        {
+            ++currentPatrolPoint;
+
+            if (currentPatrolPoint >= actions.Count)
+                currentPatrolPoint = 0;
+        }
+
         public void GetNextTarget(ref Vector3d move)
         {
             PatrolAction currentPoint = actions[currentPatrolPoint];
-
-            if (currentPoint.type == PatrolActionType.Move)
-                move += currentPoint.position;
+            move += currentPoint.position;
         }
 
         public void Move(Vector3d position)
         {
             actions.Add(new PatrolAction(PatrolActionType.Move, 0, position));
+        }
+
+        public void Wait(Vector3d position)
+        {
+            actions.Add(new PatrolAction(PatrolActionType.Wait, 1, position));
         }
 
         public void Clear()

@@ -20,6 +20,8 @@ namespace MSD.EvaFollower
         private LineRenderer _cursor = new LineRenderer();
 
         //Selection variables
+
+        private bool gameUIToggle = true;
         private Texture2D _selectionHighlight = new Texture2D(200,200);
         private Rect _selection = new Rect(0, 0, 0, 0);
         private Vector3 _startClick = -Vector3.one;
@@ -47,7 +49,7 @@ namespace MSD.EvaFollower
         {
             try
             {
-                EvaDebug.DebugWarning("Start() Initialized.");
+                //EvaDebug.DebugWarning("Start() Initialized.");
 
                 fetch = this;
                 GameEvents.onFlightReady.Add(new EventVoid.OnEvent(onFlightReadyCallback));
@@ -60,7 +62,7 @@ namespace MSD.EvaFollower
             }
             catch
             {
-                EvaDebug.DebugWarning("Start() failed");
+                //EvaDebug.DebugWarning("Start() failed");
             }
 
         }
@@ -91,9 +93,6 @@ namespace MSD.EvaFollower
         /// </summary>
         private void onFlightReadyCallback()
         {            
-#if DEBUG
-            EvaDebug.DebugWarning("onFlightReadyCallback()");
-#endif
             FetchEVAS();
         }
 
@@ -103,10 +102,8 @@ namespace MSD.EvaFollower
         /// <param name="report"></param>
         public void OnCrewKilled(EventReport report)
         {
-#if DEBUG
-            EvaDebug.DebugWarning(report.sender + " is dead!");
-#endif
-            RemoveEva(report.origin.flightID);
+            //EvaDebug.DebugWarning(report.sender + " is dead!");
+            DestroyLine("kerbalEVA ("+report.sender+")");
         }
 
         /// <summary>
@@ -148,9 +145,6 @@ namespace MSD.EvaFollower
 
                 uint flightID = vessel.parts[0].flightID;
 
-#if DEBUG
-                EvaDebug.DebugLog("Added EVA: " + vessel.name);
-#endif 
                 if (!ListContains(flightID))
                 {
                     EvaContainer kerbal = new EvaContainer(vessel);
@@ -206,7 +200,7 @@ namespace MSD.EvaFollower
                     }
                 }
             }
-
+            
             if (deleteID >= 0)
             {
                 DeselectEva(_evaCollection[deleteID]);
@@ -288,29 +282,12 @@ namespace MSD.EvaFollower
                 if (v.Selected)
                 {
                     UpdateSelectionLine(v.EVA);
-                }         
-                
-                if (v.Mode == Mode.None)
-                {
-                    if (v.CurrentAnimationType != AnimationState.Idle)
-                    {
-                        //Don't force the active vessel.
-                        if (activeEVA == null)
-                        {
-                            v.Animate(AnimationState.Idle, false);
-                        }
-                        else
-                        {
-                            if (v.FlightID != activeEVA.part.flightID)
-                            {
-                                v.Animate(AnimationState.Idle, false);
-                            }
-                        }
-                    }
-
-                    continue;
                 }
 
+                if (v.Mode == Mode.None)
+                {
+                    continue;
+                }
                 #endregion
 
                 #region Update EVA list
@@ -342,7 +319,7 @@ namespace MSD.EvaFollower
             #region Handle Orders
             //Drag rectangle...
             #region Rectangle Handler
-
+                        
             if (Input.GetMouseButtonDown(_selectMouseButton))
             {
                 _startClick = Input.mousePosition;
@@ -359,6 +336,8 @@ namespace MSD.EvaFollower
                     _selection.y += _selection.height;
                     _selection.height = -_selection.height;
                 }
+
+                //EvaDebug.DebugLog("S: " +_selection);
 
                 _startClick = -Vector3.one;
             }
@@ -386,7 +365,8 @@ namespace MSD.EvaFollower
                         }
                         else
                         {
-                            DeselectEva(eva);
+                            if(eva.Selected)
+                                DeselectEva(eva);
                         }
                     }
                 }
@@ -400,16 +380,13 @@ namespace MSD.EvaFollower
             {
                 return;
             }
-#if DEBUG
-            EvaDebug.DebugLog("Check Collision...");
-#endif
-
             
             RaycastHit hitInfo = new RaycastHit();
             bool hit = Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hitInfo);
 
             if (!hit)
             {
+                DisableCursor();
                 return; //nothing to check.
             }
 
@@ -422,27 +399,16 @@ namespace MSD.EvaFollower
             {
                 if (evaCollision != null)
                 {
-                    //deselect all others.
-                    foreach (EvaContainer eva in _evaCollection)
-                    {
-                        if (eva.Selected)
-                            DeselectEva(eva);
-                    }
+                    DeselectAllKerbals();
 
                     EvaContainer _eva = GetEva(evaCollision.part.flightID);
-#if DEBUG
-                        EvaDebug.DebugLog("Select: " + _eva.EVA.name);
-#endif
                     SelectEva(_eva);
 
                 }
                 else
                 {
-                    //get the kerbals in the selection.
-                    foreach (EvaContainer eva in _evaCollection)
-                    {
-                        DeselectEva(eva);
-                    }
+                    DeselectAllKerbals();
+
                     DisableCursor();
                 }
             }
@@ -451,14 +417,16 @@ namespace MSD.EvaFollower
             {
                 var position = (Vector3d)hitInfo.point;
 
-
-#if DEBUG
-                EvaDebug.DebugLog("World Position: " + position);
-#endif
                 for (int j = 0; j < _evaCollection.Count; j++)
                 {
                     if (_evaCollection[j].Selected)
                     {
+                        //Remove current mode.
+                        if (_evaCollection[j].Mode == Mode.Patrol)
+                        {
+                            _evaCollection[j].Patrol.Clear();
+                        }
+
                         _evaCollection[j].Order.Move(position);
                         _evaCollection[j].Selected = false;
                         _evaCollection[j].Mode = Mode.Order;
@@ -466,7 +434,7 @@ namespace MSD.EvaFollower
                         _animatedCursor = true;
 
                         //destroy circle line
-                        DestroyLine(_evaCollection[j].EVA);
+                        DestroyLine(_evaCollection[j].EVA.name);
                     }
                 }
             }
@@ -488,6 +456,16 @@ namespace MSD.EvaFollower
             #endregion
         }
 
+        private void DeselectAllKerbals()
+        {
+            //deselect all kerbals.
+            foreach (EvaContainer eva in _evaCollection)
+            {
+                if (eva.Selected)
+                    DeselectEva(eva);
+            }
+        }
+
         /// <summary>
         /// Deselect an EVA, and remove the selection from the line collection.
         /// </summary>
@@ -498,7 +476,7 @@ namespace MSD.EvaFollower
             _eva.Selected = false;
 
             //create circle line
-            DestroyLine(_eva.EVA);
+            DestroyLine(_eva.EVA.name);
         }
 
 
@@ -525,12 +503,25 @@ namespace MSD.EvaFollower
         /// </summary>
         private void OnGUI()
         {
-            if (_startClick != -Vector3.one && _selection.width != 0 && _selection.height != 0)
+            if (gameUIToggle)
             {
-                GUI.color = new Color(1, 1, 1, 0.15f);      
-                GUI.DrawTexture(_selection, _selectionHighlight);
+                if (_startClick != -Vector3.one && _selection.width != 0 && _selection.height != 0)
+                {
+                    GUI.color = new Color(1, 1, 1, 0.15f);
+                    GUI.DrawTexture(_selection, _selectionHighlight);
+                }
             }
             
+        }
+
+        void GameUIEnable()
+        {
+            gameUIToggle = true;
+        }
+
+        void GameUIDisable()
+        {
+            gameUIToggle = false;
         }
 
         /// <summary>
@@ -621,16 +612,12 @@ namespace MSD.EvaFollower
         /// Destroy the selection model for a specific kerbal.
         /// </summary>
         /// <param name="eva"></param>
-        private void DestroyLine(KerbalEVA eva)
+        private void DestroyLine(string evaName)
         {
-#if DEBUG
-            EvaDebug.DebugLog("DestroyLine(" + eva.name + ")");
-#endif
-
-            if (selectionLines.ContainsKey(eva.name))
+            if (selectionLines.ContainsKey(evaName))
             {
-                Destroy(selectionLines[eva.name]);//destroy object
-                selectionLines.Remove(eva.name); // and throw away the key.
+                Destroy(selectionLines[evaName]);//destroy object
+                selectionLines.Remove(evaName); // and throw away the key.
             }
         }
 
@@ -644,9 +631,7 @@ namespace MSD.EvaFollower
             {
                 return;
             }
-#if DEBUG
-            EvaDebug.DebugLog("CreateLine(" + eva.name + ")");
-#endif
+
             LineRenderer lineRenderer = new GameObject().AddComponent<LineRenderer>();
 
             lineRenderer.useWorldSpace = false;

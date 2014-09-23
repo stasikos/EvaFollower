@@ -10,12 +10,8 @@ namespace MSD.EvaFollower
     class EvaDebug 
     {
         //Debug log yes/no
-#if DEBUG
         private static bool debugLogActive = true;
-#else
-        private static bool debugLogActive = true;
-#endif
-
+        
         public static void DebugLog(string text)
         {
             if (debugLogActive)
@@ -47,9 +43,8 @@ namespace MSD.EvaFollower
                 Debug.LogError("[EFX] " + text);
             }
         }
-
+        
 #if DEBUG
-
 
         public static float Elapsed = 0;
         private static SD.Stopwatch watch;
