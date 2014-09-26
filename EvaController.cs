@@ -6,21 +6,16 @@ using UnityEngine;
 
 namespace MSD.EvaFollower
 {
-    [KSPAddon(KSPAddon.Startup.Flight, false)]
+    [KSPAddon(KSPAddon.Startup.Flight, true)]
     class EvaController : MonoBehaviour
     {
         public static EvaController fetch;
-
-        //
-        public static Mesh helmetMesh = null;
-        public static Mesh visorMesh = null;
-               
+                
         private List<EvaContainer> _evaCollection = new List<EvaContainer>();       
         private Dictionary<string, LineRenderer> selectionLines = new Dictionary<string, LineRenderer>();
         private LineRenderer _cursor = new LineRenderer();
 
         //Selection variables
-
         private bool gameUIToggle = true;
         private Texture2D _selectionHighlight = new Texture2D(200,200);
         private Rect _selection = new Rect(0, 0, 0, 0);
@@ -41,6 +36,8 @@ namespace MSD.EvaFollower
         
         //animation variable
         double angle = 0;
+        
+        public List<EvaContainer> Collection { get { return _evaCollection; } }
 
         /// <summary>
         /// Runs when the object starts.
@@ -52,48 +49,62 @@ namespace MSD.EvaFollower
                 //EvaDebug.DebugWarning("Start() Initialized.");
 
                 fetch = this;
-                GameEvents.onFlightReady.Add(new EventVoid.OnEvent(onFlightReadyCallback));
-                GameEvents.onCrewOnEva.Add(new EventData<GameEvents.FromToAction<Part, Part>>.OnEvent(OnCrewOnEva));
-                GameEvents.onCrewBoardVessel.Add(new EventData<GameEvents.FromToAction<Part, Part>>.OnEvent(OnCrewBoardVessel));
-                GameEvents.onCrewKilled.Add(new EventData<EventReport>.OnEvent(OnCrewKilled));
-
-                InitializeMeshes();
+                GameEvents.onFlightReady.Add(onFlightReadyCallback);
+                GameEvents.onCrewOnEva.Add(OnCrewOnEva);
+                GameEvents.onCrewBoardVessel.Add(OnCrewBoardVessel);
+                GameEvents.onCrewKilled.Add(OnCrewKilled);
+                GameEvents.onVesselLoaded.Add(OnVesselLoaded);
+                GameEvents.onGameStateSave.Add(OnSave);
+                GameEvents.onVesselSituationChange.Add(OnVesselSituationChange);
+                
                 InitializeCursor();
             }
             catch
             {
-                //EvaDebug.DebugWarning("Start() failed");
+                EvaDebug.DebugWarning("Start() failed");
             }
 
         }
 
-        /// <summary>
-        /// Save pointer to helmet & visor meshes so helmet removal can restore them.
-        /// </summary>
-        private void InitializeMeshes()
+        public void OnVesselSituationChange(GameEvents.HostedFromToAction<Vessel, Vessel.Situations> action)
         {
-           foreach (SkinnedMeshRenderer smr
-                     in Resources.FindObjectsOfTypeAll(typeof(SkinnedMeshRenderer)))
+            ReloadVessel(action.host);
+        }
+
+        
+        public void OnDestroy()
+        {
+            try
             {
-                if (smr.name == "helmet")
-                    helmetMesh = smr.sharedMesh;
-                else if (smr.name == "visor")
-                    visorMesh = smr.sharedMesh;
+                //EvaDebug.DebugWarning("Destroy() Initialized.");
+
+                GameEvents.onFlightReady.Remove(onFlightReadyCallback);
+                GameEvents.onCrewOnEva.Remove(OnCrewOnEva);
+                GameEvents.onCrewBoardVessel.Remove(OnCrewBoardVessel);               
+                GameEvents.onCrewKilled.Remove(OnCrewKilled);
+                GameEvents.onVesselLoaded.Remove(OnVesselLoaded);
+                GameEvents.onGameStateSave.Remove(OnSave);
+                GameEvents.onVesselSituationChange.Remove(OnVesselSituationChange);
+            }
+            catch
+            {
+                EvaDebug.DebugWarning("Destroy() failed");
             }
         }
         
-
-        public void Destroy()
+        public void OnSave(ConfigNode node)
         {
-            
+            EvaSettings.fetch.Save();
         }
-       
+         
+
         /// <summary>
         /// Load the list 
         /// </summary>
         private void onFlightReadyCallback()
-        {            
+        {
             FetchEVAS();
+            EvaSettings.fetch.Load();
         }
 
         /// <summary>
@@ -113,7 +124,8 @@ namespace MSD.EvaFollower
         public void OnCrewBoardVessel(GameEvents.FromToAction<Part, Part> e)
         {
             //remove kerbal
-            uint flightID = e.from.flightID;
+            Guid flightID = e.from.vessel.id;
+
             RemoveEva(flightID);
         }
 
@@ -124,7 +136,7 @@ namespace MSD.EvaFollower
         public void OnCrewOnEva(GameEvents.FromToAction<Part, Part> e)
         {
             //add new kerbal
-            uint flightID = e.to.flightID;
+            Guid flightID = e.to.vessel.id;
 
             if (!ListContains(flightID))
             {
@@ -132,6 +144,34 @@ namespace MSD.EvaFollower
                 AddEva(kerbal);
             }
         }
+
+        public void OnVesselLoaded(Vessel vessel)
+        {
+            ReloadVessel(vessel);
+        }
+
+        private void ReloadVessel(Vessel vessel)
+        {
+            //skip if not a kerbal.
+            if (!vessel.isEVA)
+                return;
+
+            if (ListContains(vessel.id))
+            {
+                EvaContainer kerbal = GetEva(vessel.id);
+
+                if (kerbal != null) //make sure the list is loaded.
+                {
+                    kerbal.Reload(vessel);
+                    EvaSettings.fetch.LoadEvaVesselConfig(vessel.id);
+                }
+            }
+            else
+            {
+                EvaContainer kerbal = new EvaContainer(vessel);
+                AddEva(kerbal);
+            }
+}
 
         /// <summary>
         /// Fetch all evas in the universe.
@@ -142,14 +182,27 @@ namespace MSD.EvaFollower
             {
                 if (!vessel.isEVA)
                     continue;
+                
+                Guid flightID = vessel.id;
 
-                uint flightID = vessel.parts[0].flightID;
-
-                if (!ListContains(flightID))
+                if (vessel.loaded)
                 {
-                    EvaContainer kerbal = new EvaContainer(vessel);
-                    AddEva(kerbal);
+                    //Loaded
+                    if (!ListContains(flightID))
+                    {
+                        EvaContainer kerbal = new EvaContainer(vessel);
+                        AddEva(kerbal);
+                    }
                 }
+                else
+                {
+                    //Unloaded
+                    if (!ListContains(vessel.id))
+                    {
+                        EvaContainer kerbal = new EvaContainer(vessel);
+                        AddEva(kerbal);
+                    }
+                 }
             }
         }
 
@@ -158,7 +211,7 @@ namespace MSD.EvaFollower
         /// </summary>
         /// <param name="flightID"></param>
         /// <returns></returns>
-        private bool ListContains(uint flightID)
+        private bool ListContains(Guid flightID)
         {
             for (int i = 0; i < _evaCollection.Count; i++)
             {
@@ -181,7 +234,7 @@ namespace MSD.EvaFollower
         /// Remove an EVA from the list.
         /// </summary>
         /// <param name="flightID"></param>
-        private void RemoveEva(uint flightID)
+        private void RemoveEva(Guid flightID)
         {
             int deleteID = -1;
             for (int i = _evaCollection.Count - 1; i >= 0; i--)
@@ -213,7 +266,7 @@ namespace MSD.EvaFollower
         /// </summary>
         /// <param name="flightID"></param>
         /// <returns></returns>
-        public EvaContainer GetEva(uint flightID)
+        public EvaContainer GetEva(Guid flightID)
         {
             for (int i = _evaCollection.Count - 1; i >= 0; i--)
             {
@@ -246,6 +299,7 @@ namespace MSD.EvaFollower
 
         }
 
+        
         /// <summary>
         /// Update the list of kerbals.
         /// </summary>
@@ -254,40 +308,59 @@ namespace MSD.EvaFollower
             if (!FlightGlobals.ready || PauseMenu.isOpen)
                 return;
 
+          
             angle += 0.1;
           
             var activeVessel = FlightGlobals.ActiveVessel;
             var activeEVA = activeVessel.GetComponent<KerbalEVA>();
 
             double geeForce = FlightGlobals.currentMainBody.GeeASL;
+            
+            //_evaCollection.RemoveAll(e => e == null);
+
             for (int i = _evaCollection.Count - 1; i >= 0; i--)
             {
                 EvaContainer v = _evaCollection[i];
     
-                #region List Cleanup
+                #region Skip death objects.
+
+                //Should never happen.. Or beat me.
                 if (v == null)
                 {
                     EvaDebug.DebugLog("V == null");
-                    //This will results in errors.. deleted at the end. 
-                    _evaCollection.RemoveAt(i); continue;
+                    continue;
                 }
-                if (v.EVA.part == null || v.EVA == null)
+        
+                //This list contains eva's that are not loaded (out of bounds)
+                //Just ignore them. 
+                if (!v.Loaded){continue;}
+
+                //Vessel unloaded
+                if (v.EVA == null)
                 {
-                    EvaDebug.DebugLog("V.EVA == null");
-                    _evaCollection.RemoveAt(i); continue;
+                    v.Loaded = false;
+                    continue;
                 }
+
                 #endregion
 
                 #region Don't wast any time.
-                if (v.Selected)
-                {
+                 
+                if (v.Selected){
                     UpdateSelectionLine(v.EVA);
                 }
-
-                if (v.Mode == Mode.None)
+                                
+                // Unstable
+                if (activeEVA != null)
                 {
-                    continue;
+                    if (v.EVA != activeEVA)
+                    {
+                        v.UpdateLamps();
+                    }
                 }
+
+                if (v.Mode == Mode.None){continue;}
+
                 #endregion
 
                 #region Update EVA list
@@ -298,6 +371,13 @@ namespace MSD.EvaFollower
 
             }
 
+            
+            if (!activeVessel.Landed || activeVessel.GetHeightFromSurface() > 15)
+            {
+                DisableCursor();
+                return;
+            }
+            
 
             #region Handle Cursor...
             if (showCursor)
@@ -336,9 +416,7 @@ namespace MSD.EvaFollower
                     _selection.y += _selection.height;
                     _selection.height = -_selection.height;
                 }
-
-                //EvaDebug.DebugLog("S: " +_selection);
-
+                
                 _startClick = -Vector3.one;
             }
 
@@ -352,10 +430,15 @@ namespace MSD.EvaFollower
             {
                 if (_selection.width != 0 && _selection.height != 0)
                 {
-
                     //get the kerbals in the selection.
                     foreach (EvaContainer eva in _evaCollection)
                     {
+                        if (!eva.Loaded)
+                        {
+                            //Can't select him.
+                            continue;
+                        }
+
                         Vector3 camPos = Camera.main.WorldToScreenPoint(eva.EVA.transform.position);
                         camPos.y = InvertY(camPos.y);
 
@@ -401,7 +484,7 @@ namespace MSD.EvaFollower
                 {
                     DeselectAllKerbals();
 
-                    EvaContainer _eva = GetEva(evaCollision.part.flightID);
+                    EvaContainer _eva = GetEva(evaCollision.vessel.id);
                     SelectEva(_eva);
 
                 }
@@ -417,8 +500,14 @@ namespace MSD.EvaFollower
             {
                 var position = (Vector3d)hitInfo.point;
 
+                //substract active vessel
+                position -= activeVessel.GetWorldPos3D();
+
                 for (int j = 0; j < _evaCollection.Count; j++)
                 {
+                    if (!_evaCollection[j].Loaded)
+                        continue;
+
                     if (_evaCollection[j].Selected)
                     {
                         //Remove current mode.
@@ -427,7 +516,7 @@ namespace MSD.EvaFollower
                             _evaCollection[j].Patrol.Clear();
                         }
 
-                        _evaCollection[j].Order.Move(position);
+                        _evaCollection[j].Order.Move(position, Util.GetWorldPos3DSave( activeVessel ));
                         _evaCollection[j].Selected = false;
                         _evaCollection[j].Mode = Mode.Order;
 
@@ -461,6 +550,9 @@ namespace MSD.EvaFollower
             //deselect all kerbals.
             foreach (EvaContainer eva in _evaCollection)
             {
+                if (!eva.Loaded)
+                    continue;
+
                 if (eva.Selected)
                     DeselectEva(eva);
             }
@@ -530,6 +622,11 @@ namespace MSD.EvaFollower
         /// <param name="eva"></param>
         public void UpdateSelectionLine(KerbalEVA eva)
         {
+            if (!selectionLines.ContainsKey(eva.name))
+            {
+                CreateLine(eva);
+            }
+
             var lineRenderer = selectionLines[eva.name];
             SetSelectionLineProperties(eva, lineRenderer);            
         }
@@ -592,7 +689,7 @@ namespace MSD.EvaFollower
         private void ShowCursor()
         {
             showCursor = true;
-            _cursor.renderer.enabled = true;
+            _cursor.renderer.enabled = false;
         }
 
         /// <summary>

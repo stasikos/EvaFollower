@@ -43,15 +43,25 @@ namespace MSD.EvaFollower
                 Debug.LogError("[EFX] " + text);
             }
         }
-        
-#if DEBUG
+
+
+        public static void ProfileStart()
+        {
+            StartTimer();
+        }
+
+        public static void ProfileEnd(string name)
+        {
+            EndTimer();
+            EvaDebug.DebugWarning(string.Format("Profile: {0}: {1}ms", name, Elapsed));
+        }
 
         public static float Elapsed = 0;
         private static SD.Stopwatch watch;
         /// <summary>
         /// Start the timer
         /// </summary>
-        public static void StartTimer()
+        private static void StartTimer()
         {
             watch = SD.Stopwatch.StartNew();
         }
@@ -59,11 +69,10 @@ namespace MSD.EvaFollower
         /// <summary>
         /// End the timer, and get the elapsed time.
         /// </summary>
-        public static void EndTimer()
+        private static void EndTimer()
         {
             watch.Stop();
             Elapsed = watch.ElapsedMilliseconds;
         }
-#endif
     }
 }

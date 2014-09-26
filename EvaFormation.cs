@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Xml;
 
 namespace MSD.EvaFollower
 {
@@ -61,5 +62,34 @@ namespace MSD.EvaFollower
             return false;
         }
 
+
+        public void Save(XmlDocument doc, XmlNode node)
+        {
+            XmlElement el = doc.CreateElement("Formations");
+
+            if (leader != null)
+            {
+                XmlAttribute xa = doc.CreateAttribute("Leader");
+                xa.Value = leader.FlightID.ToString();
+
+                el.Attributes.Append(xa);
+            }
+
+            node.AppendChild(el);
+        }
+
+        public void Load(XmlNode node)
+        {
+            if (node.Attributes.Count == 0)
+                return;
+
+            if (node.Attributes["Leader"] != null)
+            {
+                Guid guid = new Guid(node.Attributes["Leader"].Value);
+                leader = EvaController.fetch.GetEva(guid);
+            }
+
+        }
+        
     }
 }

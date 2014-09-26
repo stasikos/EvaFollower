@@ -11,16 +11,16 @@ namespace MSD.EvaFollower
     /// </summary>
     class EvaModule : PartModule
     {
+        
         EvaContainer _currentKerbal;
-        bool showHelmet = true;
 
         [KSPEvent(guiActive = true, guiName = "Follow Me", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
-        public void Follow()
+        public void eFollow()
         {
-            uint flightID = (FlightGlobals.fetch.activeVessel).parts[0].flightID;
-     
+            Guid flightID = (FlightGlobals.fetch.activeVessel).id;
             EvaContainer leader = EvaController.fetch.GetEva(flightID);
 
+            
             _currentKerbal.Selected = false;
             _currentKerbal.Formation.Leader = leader;
             _currentKerbal.Mode = Mode.Follow;
@@ -28,37 +28,52 @@ namespace MSD.EvaFollower
         }
 
         [KSPEvent(guiActive = true, guiName = "Stay Put", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
-        public void Stay()
+        public void eStay()
         {
             _currentKerbal.Formation.Leader = null;
             _currentKerbal.Mode = Mode.None;
         }
 
         [KSPEvent(guiActive = true, guiName = "Add Waypoint", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
-        public void SetPoint()
+        public void eSetPoint()
         {
-             Vector3d position = _currentKerbal.EVA.vessel.GetWorldPos3D();
-            _currentKerbal.Patrol.Move(position);
-        }
+            SetReferenceBody();
 
-        [KSPEvent(guiActive = true, guiName = "Wait", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
-        public void Wait()
-        {
-            Vector3d position = _currentKerbal.EVA.vessel.GetWorldPos3D();
-            _currentKerbal.Patrol.Wait(position);
+            Vector3d position = Util.GetWorldPos3DSave(_currentKerbal.EVA.vessel);   
+            _currentKerbal.Patrol.Move(position);
+            
             SetEvents();
         }
 
 
+        [KSPEvent(guiActive = true, guiName = "Wait", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
+        public void eWait()
+        {
+            SetReferenceBody();
+
+            Vector3d position = _currentKerbal.EVA.vessel.GetWorldPos3D();        
+            _currentKerbal.Patrol.Wait(position);
+
+            SetEvents();
+        } 
+        
+        private void SetReferenceBody()
+        {
+            if (_currentKerbal.Patrol.referenceBody == "None")
+            {
+                _currentKerbal.Patrol.referenceBody = FlightGlobals.ActiveVessel.mainBody.bodyName;
+            }
+        }
+
         [KSPEvent(guiActive = true, guiName = "Patrol", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
-        public void Patrol()
+        public void ePatrol()
         {
             _currentKerbal.Mode = Mode.Patrol;
             SetEvents();
         }
 
         [KSPEvent(guiActive = true, guiName = "End Patrol", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
-        public void EndPatrol()
+        public void eEndPatrol()
         {
             _currentKerbal.Mode = Mode.None;
             _currentKerbal.Patrol.Clear();
@@ -66,101 +81,56 @@ namespace MSD.EvaFollower
         }
 
         [KSPEvent(guiActive = true, guiName = "Run", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
-        public void PatrolRun()
+        public void ePatrolRun()
         {
             _currentKerbal.Patrol.AllowRunning = true;
         }
 
         [KSPEvent(guiActive = true, guiName = "Walk", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
-        public void PatrolWalk()
+        public void ePatrolWalk()
         {
             _currentKerbal.Patrol.AllowRunning = false;
         }
 
         [KSPEvent(guiActive = true, guiName = "Toggle Helmet", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
-        public void ToggleHelmet()
+        public void eToggleHelmet()
         {
-            showHelmet = !showHelmet;
+            bool showHelmet = !_currentKerbal.HelmetOn;
             _currentKerbal.EVA.ShowHelmet(showHelmet);
+            _currentKerbal.HelmetOn = showHelmet;
         }
 
-        [KSPEvent(guiActive = true, guiName = "Jump", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
-        public void Jump()
+        /*
+        [KSPEvent(guiActive = true, guiName = "RCS", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
+        public void RCS()
         {
-            _currentKerbal.EVA.Jump();
-        }
 
-        [KSPEvent(guiActive = true, guiName = "Ladder Grab", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
-        public void LadderGrab()
-        {
-            _currentKerbal.EVA.GrapLadder();
-        }
+            double geeForce = FlightGlobals.currentMainBody.GeeASL;
 
-        [KSPEvent(guiActive = true, guiName = "Pack Toggle", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
-        public void PackToggle()
-        {            
+            EvaDebug.DebugLog("Force: " + geeForce);
+            EvaDebug.DebugLog("walkSpeed: " + _currentKerbal.EVA.walkSpeed);
+            EvaDebug.DebugLog("runSpeed: " + _currentKerbal.EVA.runSpeed);
+            EvaDebug.DebugLog("minRunningGee: " + _currentKerbal.EVA.minRunningGee);
+            EvaDebug.DebugLog("minWalkingGee: " + _currentKerbal.EVA.minWalkingGee);
+
             _currentKerbal.EVA.PackToggle();
         }
+        */
 
-        [KSPEvent(guiActive = true, guiName = "FearFactor", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
-        public void FearFactor()
-        {
-            _currentKerbal.EVA.FearFactor(-1000000f);
-        }
-
-        [KSPEvent(guiActive = true, guiName = "FindKerbal", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
-        public void FindKerbal()
-        {
-            var expS = GameObject.FindObjectsOfType<Kerbal>();
-
-                foreach (var item in expS)
-                {
-
-                    EvaDebug.DebugLog("N: " + item.name);
-                    EvaDebug.DebugLog("C: " + item.courage);
-                    EvaDebug.DebugLog("S: " + item.stupidity);
-                    EvaDebug.DebugLog("B: " + item.isBadass);
-
-
-                    EvaDebug.DebugLog("C: " + item.gameObject.name);
-                }
-            
-        }
-      
-
+        /*
         [KSPEvent(guiActive = true, guiName = "Debug", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
         public void Debug()
         {
-            _currentKerbal.Info();
+            _currentKerbal.EVA.FearFactor(1000);
 
-            EvaDebug.DebugLog("Current:");
-            foreach (var item in _currentKerbal.EVA.fsm.CurrentState.StateEvents)
-            {
-                EvaDebug.DebugLog(item.name);
-            }
-            EvaDebug.DebugLog("Last:");
-            foreach (var item in _currentKerbal.EVA.fsm.LastState.StateEvents)
-            {
-                EvaDebug.DebugLog(item.name);
-            }
+            EvaDebug.DebugWarning("name:" + FlightGlobals.getMainBody().name);
+            EvaDebug.DebugWarning("bodyName: " + FlightGlobals.getMainBody().bodyName);
 
-            var expS = UnityEngine.Object.FindObjectsOfType<kerbalExpressionSystem>();
 
-            foreach (var item in expS)
-            {
-                EvaDebug.DebugLog(item.name);
-                EvaDebug.DebugLog("panicLevel:" + item.panicLevel);
-                EvaDebug.DebugLog("fearFactor:" + item.fearFactor);
-                EvaDebug.DebugLog("expression:" + item.expression);
-                EvaDebug.DebugLog("expressionParameterName:" + item.expressionParameterName);
-                EvaDebug.DebugLog("varianceParameterName:" + item.varianceParameterName);
-                EvaDebug.DebugLog("secondaryVarianceParameterName:" + item.secondaryVarianceParameterName);
-
-                item.fearFactor = 100;
-            }
-
-        }
-
+            EvaDebug.DebugWarning("cname:" + FlightGlobals.currentMainBody.name);
+            EvaDebug.DebugWarning("cbodyName: " + FlightGlobals.currentMainBody.bodyName);
+        }*/
+        
                    
         public void Start()
         {
@@ -182,64 +152,71 @@ namespace MSD.EvaFollower
 
             ResetEvents();
 
-            if (!part.GroundContact)
-                return;            
-    
-            bool isActive = (part.vessel == FlightGlobals.ActiveVessel);
+            if (!part.vessel.Landed)
+                return;
 
             if (_currentKerbal.Mode == Mode.None)
             {
-                Events["Follow"].active = true;
-                Events["Stay"].active = false;
+                Events["eFollow"].active = true;
+                Events["eStay"].active = false;
             }
             else if (_currentKerbal.Mode == Mode.Follow)
             {
-                Events["Follow"].active = false;
-                Events["Stay"].active = true;
+                Events["eFollow"].active = false;
+                Events["eStay"].active = true;
             }
             else if (_currentKerbal.Mode == Mode.Patrol)
             {
-                Events["Follow"].active = false;
-                Events["Stay"].active = false;
+                Events["eFollow"].active = false;
+                Events["eStay"].active = false;
 
                 if (_currentKerbal.Patrol.AllowRunning)
                 {
-                    Events["PatrolWalk"].active = true;
+                    Events["ePatrolWalk"].active = true;
                 }
                 else
                 {
-                    Events["PatrolRun"].active = true;
+                    Events["ePatrolRun"].active = true;
                 }
 
-                Events["Patrol"].active = false;
-                Events["EndPatrol"].active = true;
+                Events["ePatrol"].active = false;
+                Events["eEndPatrol"].active = true;
             }
             else if (_currentKerbal.Mode == Mode.Order)
             {
-                Events["Stay"].active = true;
-                Events["Follow"].active = true;
+                Events["eStay"].active = true;
+                Events["eFollow"].active = true;
             }
-            
 
+            if (FlightGlobals.currentMainBody != null)
+            {
+                if (FlightGlobals.currentMainBody.bodyName == "Kerbin")
+                {
+                    Events["eToggleHelmet"].active = true;
+                }
+            }
+
+            bool isActive = (part.vessel == FlightGlobals.ActiveVessel);
             if(isActive)
             {
+            
 
-                Events["Follow"].active = false;
-                Events["Stay"].active = false;
-                Events["SetPoint"].active = true;
-                Events["Wait"].active = true;
+                Events["eFollow"].active = false;
+                Events["eStay"].active = false;
+                Events["eSetPoint"].active = true;
+                Events["eWait"].active = true;
 
                 if (_currentKerbal.Mode != Mode.Patrol)
                 {
                     if (_currentKerbal.Patrol.actions.Count >= 2)
                     {
-                        Events["Patrol"].active = true;
+                        Events["ePatrol"].active = true;
                     }
                 }
                 else
                 {
-                    Events["SetPoint"].active = false;
-                    Events["Wait"].active = false;
+                    Events["eSetPoint"].active = false;
+                    Events["eWait"].active = false;
                 }                
             }           
         }
@@ -249,14 +226,15 @@ namespace MSD.EvaFollower
         /// </summary>
         private void ResetEvents()
         {
-            Events["Follow"].active = false;
-            Events["Stay"].active = false;
-            Events["SetPoint"].active = false;
-            Events["Wait"].active = false;
-            Events["Patrol"].active = false;
-            Events["EndPatrol"].active = false;
-            Events["PatrolRun"].active = false;
-            Events["PatrolWalk"].active = false;
+            Events["eFollow"].active = false;
+            Events["eStay"].active = false;
+            Events["eSetPoint"].active = false;
+            Events["eWait"].active = false;
+            Events["ePatrol"].active = false;
+            Events["eEndPatrol"].active = false;
+            Events["ePatrolRun"].active = false;
+            Events["ePatrolWalk"].active = false;
+            Events["eToggleHelmet"].active = false;
         }
 
         /// <summary>
@@ -269,9 +247,9 @@ namespace MSD.EvaFollower
         }
 
         public void onFlightReadyCallback()
-        {
+        {  
             //initialize extentions.
-            SetEvents();
+            SetEvents();        
         }
 
         public void onVesselChange(Vessel vessel)

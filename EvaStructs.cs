@@ -8,7 +8,8 @@ namespace MSD.EvaFollower
     /// <summary>
     /// The mode the EVA is in.
     /// </summary>
-    public enum Mode
+    [Flags]
+    internal enum Mode
     {
         None = 0,
         Follow = 1,
@@ -20,7 +21,7 @@ namespace MSD.EvaFollower
     /// <summary>
     /// The animation states for the EvaControllerContainer
     /// </summary>
-    public enum AnimationState
+    internal enum AnimationState
     {
         None,
         Swim,

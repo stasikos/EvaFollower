@@ -5,12 +5,13 @@ using System.Text;
 using UnityEngine;
 using System.Collections;
 using System.Threading;
+using KSP.IO;
 
 namespace MSD.EvaFollower
 {
     class EvaContainer
     {
-        private uint flightID;
+        private Guid flightID;
         private KerbalEVA _eva;
         private Part _part;
         private EvaModule _module;
@@ -22,14 +23,16 @@ namespace MSD.EvaFollower
         private EvaPatrol _patrol = new EvaPatrol();
         private EvaOrder _order = new EvaOrder();
 
-        private bool _selected = false; 
-        public bool _debug = false;
+        private bool _selected = false;
+        private bool _helmetOn = true;
+        private bool _loaded = false;
 
+        public bool _debug = false;
 
         /// <summary>
         /// The flight ID of the kerbal.
         /// </summary>
-        public uint FlightID
+        public Guid FlightID
         {
             get
             {
@@ -106,31 +109,48 @@ namespace MSD.EvaFollower
             set { _selected = value; }
         }
 
+        /// <summary>
+        /// Returns if the current kerbal has an helmet on.
+        /// </summary>
+        public bool HelmetOn
+        {
+            get { return _helmetOn; }
+            set { _helmetOn = value; }
+        }
 
+        /// <summary>
+        /// Returns if the current kerbal is loaded.
+        /// </summary>
+        public bool Loaded { get { return _loaded; } set { _loaded = value; } }
 
 
         public EvaContainer(Vessel vessel)
         {
-            this.flightID = vessel.parts[0].flightID;
+            this.flightID = vessel.id;
+            Reload(vessel);
+        }
+
+        public void Reload(Vessel vessel)
+        {
+
+            //Unloaded
+            if (!vessel.loaded)
+            {
+                Loaded = false;
+                return;
+            }
+            else
+            {
+                Loaded = true;
+            }
+
             this._part = vessel.parts[0];
             this._eva = ((KerbalEVA)_part.Modules["KerbalEVA"]);
-            
-
-            this._formation = new EvaFormation();
 
             //module on last.
             this._module = (EvaModule)_eva.GetComponent(typeof(EvaModule));
             this._module.Initialize(this);
 
-           
-        }
-   
-        public void Info()
-        {
-            foreach (KFSMEvent stateEvent in _eva.fsm.CurrentState.StateEvents)
-            {
-                    EvaDebug.DebugLog(stateEvent.name);                
-            }
         }
 
         /// <summary>
@@ -145,21 +165,31 @@ namespace MSD.EvaFollower
             //speed values
             move *= speed;
 
-            //rotate
+            //rotate            
             if (move != Vector3d.zero)
             {
-                Quaternion from = _part.vessel.transform.rotation;
-                Quaternion to = Quaternion.LookRotation(move, _eva.fUp);
-                Quaternion result = Quaternion.RotateTowards(from, to, _eva.turnRate);
-                _part.vessel.SetRotation(result);
-            }
+                if (_eva.JetpackDeployed)
+                {
+                    _eva.PackToggle();
+                }
+                else
+                {                
+                    //rotation
+                    Quaternion from = _part.vessel.transform.rotation;
+                    Quaternion to = Quaternion.LookRotation(move, _eva.fUp);
+                    Quaternion result = Quaternion.RotateTowards(from, to, _eva.turnRate);
 
-            //move
-            _eva.rigidbody.MovePosition(_eva.rigidbody.position + move);
+                    _part.vessel.SetRotation(result);
+
+                       //move   
+                    _eva.rigidbody.MovePosition(_eva.rigidbody.position + move);
+                                       
+                }
+            }
 
             #endregion
         }
-
+               
         /// <summary>
         /// Animate the kerbal
         /// </summary>
@@ -196,9 +226,10 @@ namespace MSD.EvaFollower
                 case AnimationState.BoundSpeed: { anim = "wkC_loG_forward"; } break;
                 case AnimationState.Idle:
                     {
-
                         if (_part.WaterContact)
                             anim = "swim_idle";
+                        else if (_eva.JetpackDeployed)
+                            anim = "jp_suspended";
                         else
                             anim = "idle";
 
@@ -217,6 +248,13 @@ namespace MSD.EvaFollower
             return _eva.animation[anim].enabled && !_eva.isRagdoll;
         }
 
+        public void UpdateLamps()
+        {
+            //if it's dark, update the lamps.
+            bool lampOn = Util.IsDark(_eva.transform);
+            _eva.TurnLamp(lampOn);
+        }
+
         /// <summary>
         /// Update the container. 
         /// </summary>
@@ -228,8 +266,8 @@ namespace MSD.EvaFollower
             if (_eva.isRagdoll)
             {
                 //Much Kudos to Razchek for finally slaying the Ragdoll Monster!
-                if (_eva.canRecover && _eva.fsm.TimeAtCurrentState > 1.21f)
-                { //&& !currentEVA.part.GroundContact
+                if (_eva.canRecover && _eva.fsm.TimeAtCurrentState > 1.21f && !_eva.part.GroundContact)
+                { 
                     foreach (KFSMEvent stateEvent in _eva.fsm.CurrentState.StateEvents)
                     {
                         if (stateEvent.name == "Recover Start")
@@ -245,7 +283,7 @@ namespace MSD.EvaFollower
             #endregion
 
             Vector3d move = -_eva.vessel.GetWorldPos3D();
-
+     
             #region Get next Action, Formation or Patrol
 
       
@@ -259,7 +297,10 @@ namespace MSD.EvaFollower
             }
             else if (_evaMode == Mode.Patrol)
             {
-                _patrol.GetNextTarget(ref move);
+                if (_patrol.referenceBody == FlightGlobals.currentMainBody.bodyName)
+                {
+                    _patrol.GetNextTarget(ref move);
+                }
             }
             else if (_evaMode == EvaFollower.Mode.Order)
             {
@@ -273,7 +314,11 @@ namespace MSD.EvaFollower
             double sqrDist = move.sqrMagnitude;
             float speed = TimeWarp.deltaTime;
 
-
+            if (_eva.OnALadder)
+            {
+                _eva.ReleaseLadder();
+            }
+                        
             #endregion
 
             #region Break Free Code
@@ -307,55 +352,60 @@ namespace MSD.EvaFollower
                 speed *= _eva.swimSpeed;
                 Animate(AnimationState.Swim, false);
             }
-            else if (!_part.GroundContact)
+            else if (_eva.JetpackDeployed)
             {
-                speed = 0;
+                speed *= 1f;
+                Animate(AnimationState.Idle, false);
             }
-            else if (_evaMode == Mode.Patrol)
+            else if (sqrDist > 5f && geeForce >= _eva.minRunningGee)
             {
-                if (_patrol.AllowRunning)
+                if (_evaMode == Mode.Patrol || _evaMode == EvaFollower.Mode.Order)
+                {
+                    bool allowRunning = false;
+
+                    if (_evaMode == EvaFollower.Mode.Patrol)
+                    {
+                        allowRunning = _patrol.AllowRunning;
+                    }
+                    else if (_evaMode == EvaFollower.Mode.Order)
+                    {
+                        allowRunning = _order.AllowRunning;
+                    }
+                    
+                    if (allowRunning)
+                    {
+                        speed *= _eva.runSpeed;
+                        Animate(AnimationState.Run, false);
+                    }
+                    else
+                    {
+                        speed *= _eva.walkSpeed;
+                        Animate(AnimationState.Walk, false);
+                    }
+                }
+                else
                 {
                     speed *= _eva.runSpeed;
                     Animate(AnimationState.Run, false);
                 }
-                else
-                {
-                    speed *= _eva.walkSpeed;
-                    Animate(AnimationState.Walk, false);
-                }
             }
-           else if (_evaMode == EvaFollower.Mode.Order)
-           {
-               if (_order.AllowRunning)
-               {
-                   speed *= _eva.runSpeed;
-                   Animate(AnimationState.Run, false);
-               }
-               else
-               {
-                   speed *= _eva.walkSpeed;
-                   Animate(AnimationState.Walk, false);
-               }
-           }
-           else if (sqrDist > 5f && geeForce >= _eva.minRunningGee)
-           {
-               speed *= _eva.runSpeed;
-               Animate(AnimationState.Run, false);
-           }
 
-           else if (geeForce >= _eva.minWalkingGee)
-           {
-               speed *= _eva.walkSpeed;
-               Animate(AnimationState.Walk, false);
-           }
-           else
-           {
-               speed *= _eva.boundSpeed;
-               Animate(AnimationState.BoundSpeed, false);
-           }
+            else if (geeForce >= _eva.minWalkingGee)
+            {
+                speed *= _eva.walkSpeed;
+                Animate(AnimationState.Walk, false);
+            }
+            else
+            {
+                speed *= _eva.boundSpeed * 1.25f; //speedup
+                Animate(AnimationState.BoundSpeed, false);
+            }
+
+ 
 
             #endregion
 
+           // speed *= (float)geeForce;
             move.Normalize();
 
             #region Distance Logic
@@ -385,7 +435,7 @@ namespace MSD.EvaFollower
                 }
             }
             else
-            {
+            {                
                 if (IsStatedAnimationPlaying())
                 {
                     Move(move, speed);
@@ -403,5 +453,6 @@ namespace MSD.EvaFollower
 
             #endregion
         }
+
     }
 }

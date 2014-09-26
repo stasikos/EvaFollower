@@ -3,5 +3,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <StartArguments>
     </StartArguments>
+    <StartAction>Program</StartAction>
+    <StartProgram>C:\Games\KSP\KSP_Dev\KSP.exe</StartProgram>
+    <StartWorkingDirectory>C:\Games\KSP\KSP_Dev</StartWorkingDirectory>
+    <RemoteDebugEnabled>false</RemoteDebugEnabled>
+    <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
   </PropertyGroup>
 </Project>

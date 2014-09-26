@@ -7,10 +7,10 @@ using UnityEngine;
 namespace MSD.EvaFollower
 {
     /// <summary>
-    /// Add the module to all kerbals avaible. 
+    /// Add the module to all kerbals available. 
     /// </summary>
     [KSPAddon(KSPAddon.Startup.SpaceCentre, true)]
-    public class EvaAddonAddModule : MonoBehaviour
+    internal class EvaAddonAddModule : MonoBehaviour
     {
         public void Awake()
         {
