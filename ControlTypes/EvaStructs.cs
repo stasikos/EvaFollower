@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 namespace MSD.EvaFollower
@@ -8,20 +7,32 @@ namespace MSD.EvaFollower
     /// <summary>
     /// The mode the EVA is in.
     /// </summary>
+    /// 
     [Flags]
-    internal enum Mode
+    enum Mode
     {
-        None = 0,
-        Follow = 1,
-        Patrol = 2,
-        Leader = 3,
-        Order = 4,
+        None = 1,
+        Follow = 2,
+        Patrol = 3,
+        Leader = 4,
+        Order = 5,
+    }
+
+    /// <summary>
+    /// The status the EVA is in.
+    /// </summary>
+    /// 
+    [Flags]
+    enum Status
+    {
+        None,
+        Removed
     }
 
     /// <summary>
     /// The animation states for the EvaControllerContainer
     /// </summary>
-    internal enum AnimationState
+    enum AnimationState
     {
         None,
         Swim,

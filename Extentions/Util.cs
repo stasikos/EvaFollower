@@ -1,17 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using UnityEngine;
 
 namespace MSD.EvaFollower
 {
+  
     class Util
-    {
+    { 
+        
         private static bool isDark = false;
 
         /// <summary>
         /// Returns true if there is no direct line with the sun.
+        /// The forceupdate should be used so it doesn't update every second.
         /// </summary>
         /// <param name="from"></param>
         /// <param name="forceUpdate"></param>
@@ -46,7 +46,7 @@ namespace MSD.EvaFollower
                 return isDark;
             }
         }
-
+        
         private Vector3d MoveMax(Vector3d move)
         {
             double x = move.x;
@@ -61,7 +61,6 @@ namespace MSD.EvaFollower
             y = (ay > ax) ? ((ay > az) ? y : 0) : 0;
             z = (az > ax) ? ((az > ay) ? z : 0) : 0;
 
-            EvaDebug.DebugLog("Move2: " + new Vector3d(x, y, z));
 
             return new Vector3d(x, y, z);
         }
@@ -82,11 +81,14 @@ namespace MSD.EvaFollower
         }
 
 
-        public static Vector3d ParseVector3d(string value)
+        public static Vector3d ParseVector3d(string value, bool removeTokens = true)
         {
-            value = value.Remove(0, 1);
-            value = value.Remove(value.Length - 1, 1);
-            
+            if (removeTokens)
+            {
+                value = value.Remove(0, 1);
+                value = value.Remove(value.Length - 1, 1);
+            }
+
             string[] vals = value.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
 
             Vector3d v = new Vector3d();
@@ -95,6 +97,19 @@ namespace MSD.EvaFollower
             v.y = double.Parse(vals[1]);
             v.z = double.Parse(vals[2]);
             
+            return v;
+        }
+
+    }     
+
+    static class Extentions
+    {
+        public static Vector3d Trim(this Vector3d v)
+        {
+            v.x = double.Parse(v.x.ToString("0.0000"));
+            v.y = double.Parse(v.y.ToString("0.0000"));
+            v.z = double.Parse(v.z.ToString("0.0000"));
+
             return v;
         }
     }

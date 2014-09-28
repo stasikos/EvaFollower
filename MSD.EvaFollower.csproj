@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>MSD.EvaFollower</RootNamespace>
     <AssemblyName>EvaFollower</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -30,16 +30,14 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
       <HintPath>..\..\..\KSP_24.2\KSP_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="UnityEngine">
@@ -47,27 +45,29 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EvaContainer.cs" />
     <Compile Include="EvaController.cs" />
     <Compile Include="EvaDebug.cs" />
-    <Compile Include="EvaContainer.cs" />
-    <Compile Include="EvaFormation.cs" />
-    <Compile Include="EvaModule.cs" />
+    <Compile Include="ControlTypes\EvaFormation.cs" />
+    <Compile Include="EvaLogic.cs" />
     <Compile Include="EvaAddonAddModule.cs" />
-    <Compile Include="EvaOrder.cs" />
-    <Compile Include="EvaPatrol.cs" />
+    <Compile Include="EvaModule.cs" />
+    <Compile Include="ControlTypes\EvaOrder.cs" />
+    <Compile Include="EvaOrderController.cs" />
+    <Compile Include="ControlTypes\EvaPatrol.cs" />
+    <Compile Include="ControlTypes\EvaStructs.cs" />
+    <Compile Include="ControlTypes\IEvaControlType.cs" />
     <Compile Include="EvaSettings.cs" />
-    <Compile Include="EvaStructs.cs" />
-    <Compile Include="IEvaControlType.cs" />
-    <Compile Include="KerbalEvaExtentions.cs" />
+    <Compile Include="EvaTokenReader.cs" />
+    <Compile Include="Extentions\KerbalEvaExtentions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Util.cs" />
+    <Compile Include="Extentions\Util.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="ClassDiagram1.cd" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy "C:\Games\KSP\Mods\MSD.EvaFollower\MSD.EvaFollower\bin\Release\EvaFollower.dll" "C:\Games\KSP\KSP_Dev\GameData\MSD\Plugin\" /Y</PostBuildEvent>
+    <PostBuildEvent>xcopy "C:\Games\KSP\Mods\MSD.EvaFollower\MSD.EvaFollower\bin\Release\EvaFollower.dll" "C:\Games\KSP\KSP_Dev\GameData\MSD\Plugin\" /Y
+</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

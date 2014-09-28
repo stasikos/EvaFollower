@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 namespace MSD.EvaFollower
@@ -18,6 +17,6 @@ namespace MSD.EvaFollower
         /// Get the next target to move on. 
         /// </summary>
         /// <param name="move"></param>
-        void GetNextTarget(ref Vector3d move);
+        Vector3d GetNextTarget();
     }
 }

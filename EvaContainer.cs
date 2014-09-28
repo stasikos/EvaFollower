@@ -1,164 +1,328 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using UnityEngine;
-using System.Collections;
-using System.Threading;
-using KSP.IO;
+using System.Collections.Generic;
 
 namespace MSD.EvaFollower
 {
     class EvaContainer
     {
-        private Guid flightID;
-        private KerbalEVA _eva;
-        private Part _part;
-        private EvaModule _module;
+        public Guid flightID; 
+        public Mode mode = Mode.None;
+        public Status status = Status.None;
 
-        private AnimationState _currentAnimationType = AnimationState.None;
-        private Mode _evaMode = Mode.None;
+        private bool selected = false;
+        private bool loaded = false;
+        private bool showHelmet = true;
 
-        private EvaFormation _formation = new EvaFormation();
-        private EvaPatrol _patrol = new EvaPatrol();
-        private EvaOrder _order = new EvaOrder();
 
-        private bool _selected = false;
-        private bool _helmetOn = true;
-        private bool _loaded = false;
+        private KerbalEVA eva;
 
-        public bool _debug = false;
-
-        /// <summary>
-        /// The flight ID of the kerbal.
-        /// </summary>
-        public Guid FlightID
+        internal EvaFormation formation = new EvaFormation();
+        internal EvaPatrol patrol = new EvaPatrol();
+        internal EvaOrder order = new EvaOrder();
+           
+        public bool IsActive
         {
-            get
-            {
-                return flightID;
-            }
-            set
-            {
-                flightID = value;
+            get { return (eva.vessel == FlightGlobals.ActiveVessel); }
+        }
+
+        public bool IsRagDoll
+        {
+            get { return eva.isRagdoll; }
+        }
+
+        public bool AllowPatrol
+        {
+            get { return (patrol.actions.Count >= 1);  }
+        }
+
+        public bool AllowRunning
+        {
+            get {
+
+                if (mode == Mode.Patrol)
+                {
+                    return patrol.AllowRunning;
+                }
+                else if (mode == Mode.Order)
+                {
+                    return order.AllowRunning;
+                }
+
+                return false;
             }
         }
 
-        /// <summary>
-        /// The name of the EVA
-        /// </summary>
-        public string Name
+        public bool CanTakeHelmetOff
         {
-            get
-            {
-                return _eva.name;
-            }
+            get { return FlightGlobals.ActiveVessel.mainBody.bodyName == "Kerbin"; }
         }
 
-        /// <summary>
-        /// The EVA object itself
-        /// </summary>
         public KerbalEVA EVA
         {
-            get { return _eva; }
+            get { return eva; }
         }
 
-        /// <summary>
-        /// The current mode the EVA is in.
-        /// </summary>
-        public Mode Mode
-        {
-            get { return _evaMode; }
-            set { _evaMode = value;  }
-        }
-        
-        /// <summary>
-        /// Formation Object is responsible of all formations.
-        /// </summary>
-        public EvaFormation Formation
-        {
-            get { return _formation; }
-            set { _formation = value; }
-        }        
-
-        /// <summary>
-        /// Patrol Object is responsible of all Patrol movements.
-        /// </summary>
-        public EvaPatrol Patrol
-        {
-            get { return _patrol; }
-            set { _patrol = value; }
-        }
-
-        /// <summary>
-        /// Order Object is responsible of all orders done by selections.
-        /// </summary>
-        public EvaOrder Order
-        {
-            get { return _order; }
-            set { _order = value; }
-        }
-               
-
-        /// <summary>
-        /// Returns if the current kerbal is selected.
-        /// </summary>
         public bool Selected
         {
-            get { return _selected; }
-            set { _selected = value; }
+            get { return selected; }
+            set { selected = value; }
         }
-
+                
         /// <summary>
-        /// Returns if the current kerbal has an helmet on.
+        /// Get the world position of the kerbal.
         /// </summary>
-        public bool HelmetOn
+        public Vector3d Position
         {
-            get { return _helmetOn; }
-            set { _helmetOn = value; }
+            get { return eva.vessel.GetWorldPos3D(); }
         }
 
-        /// <summary>
-        /// Returns if the current kerbal is loaded.
-        /// </summary>
-        public bool Loaded { get { return _loaded; } set { _loaded = value; } }
-
-
-        public EvaContainer(Vessel vessel)
+        public bool Loaded
         {
-            this.flightID = vessel.id;
-            Reload(vessel);
+            get { return loaded; }
         }
 
-        public void Reload(Vessel vessel)
-        {
+        public bool OnALadder { get { return eva.OnALadder; } }
 
-            //Unloaded
-            if (!vessel.loaded)
+
+        public EvaContainer(Guid flightID)
+        {
+            this.flightID = flightID;
+            this.loaded = false;
+        }
+
+        public void Load(KerbalEVA eva)
+        {
+            //Load KerbalEVA.
+            this.eva = eva;
+            loaded = true;
+
+            //module on last.
+            EvaModule module = (EvaModule)eva.GetComponent(typeof(EvaModule));
+            module.Load(this);
+
+            EvaDebug.DebugLog("EvaContainer.Load("+eva.name+")");
+        }
+
+        public void Unload()
+        {
+            EvaDebug.DebugLog("EvaContainer.Unload("+eva.name+")");
+            loaded = false;
+        }
+
+        internal string ToSave()
+        {
+            return (flightID + "," + mode + "," + status + "," + selected + ","
+                + this.formation.ToSave() + ","
+                + this.patrol.ToSave() + ","
+                + this.order.ToSave());
+        }
+
+        internal void FromSave(string evaSettings)
+        {
+            EvaTokenReader reader = new EvaTokenReader(evaSettings);
+
+            //try
+            //{
+                string sflightID = reader.NextTokenEnd(',');
+                string status = reader.NextTokenEnd(',');
+                string mode = reader.NextTokenEnd(',');
+                string selected = reader.NextTokenEnd(',');
+
+                string formation = reader.NextToken('(', ')'); reader.Consume();
+                string patrol = reader.NextToken('(', ')'); reader.Consume();
+                string order = reader.NextToken('(', ')');
+
+                this.mode = (Mode)Enum.Parse(typeof(Mode), mode);
+                this.selected = bool.Parse(selected);
+
+                this.formation.FromSave(formation);
+                this.patrol.FromSave(patrol);
+                this.order.FromSave(order);
+            /*}
+            catch
             {
-                Loaded = false;
-                return;
+                throw new Exception("[EFX] FromSave Failed.");
+            }  */         
+        }
+
+
+        internal void Follow()
+        {
+            Guid flightID = (FlightGlobals.fetch.activeVessel).id;
+            EvaContainer leader = EvaController.fetch.GetEva(flightID);
+                        
+            selected = false;
+            mode = Mode.Follow;
+            formation.SetLeader(leader);
+        }
+
+        internal void Stay()
+        {
+            mode = Mode.None;
+        }
+
+        internal void SetWaypoint()
+        {
+            patrol.Move(eva.vessel);
+        }
+
+        internal void Wait()
+        {
+            patrol.Wait(eva.vessel);
+        }
+
+        internal void StartPatrol()
+        {
+            mode = Mode.Patrol;
+        }
+
+        internal void EndPatrol()
+        {
+            mode = Mode.None;
+            patrol.Clear();
+            eva.Animate(AnimationState.Idle);
+        }
+
+        internal void SetRunPatrolMode()
+        {
+            patrol.AllowRunning = true;
+        }
+
+        internal void SetWalkPatrolMode()
+        {
+            patrol.AllowRunning = false;
+        }
+
+        internal void ToggleHelmet()
+        {
+            this.showHelmet = !showHelmet;
+            eva.ShowHelmet(this.showHelmet);
+        }
+
+        internal void UpdateLamps()
+        {
+            bool lampOn = Util.IsDark(eva.transform);
+
+            if (showHelmet && !IsActive)
+            {
+                eva.TurnLamp(lampOn);
+            }
+
+            if (IsActive)
+            {
+                if (!showHelmet && eva.lampOn)
+                {
+                    eva.TurnLamp(false);
+                }
+            }
+        }
+
+        internal void RecoverFromRagdoll()
+        {
+            eva.RecoverFromRagdoll();
+        }
+
+        internal Vector3d GetNextTarget()
+        {
+            if (mode == Mode.Follow)
+            {
+                return formation.GetNextTarget();
+            }
+            else if (mode == Mode.Patrol)
+            {
+                return patrol.GetNextTarget();
+            }
+            else if (mode == Mode.Order)
+            {
+                return order.GetNextTarget();
+            }
+
+            //Error
+            throw new Exception("[EFX] New Mode Introduced");
+        }
+
+        internal void ReleaseLadder()
+        {
+            eva.ReleaseLadder();
+        }
+
+        internal void UpdateAnimations(double sqrDist, ref float speed)
+        {
+            double geeForce = FlightGlobals.currentMainBody.GeeASL;
+
+            if (eva.part.WaterContact)
+            {
+                speed *= eva.swimSpeed;
+                eva.Animate(AnimationState.Swim);
+            }
+            else if (eva.JetpackDeployed)
+            {
+                speed *= 1f;
+                eva.Animate(AnimationState.Idle);
+            }
+            else if (sqrDist > 5f && geeForce >= eva.minRunningGee)
+            {
+                if (AllowRunning || mode == Mode.Follow)
+                {
+                    speed *= eva.runSpeed;
+                    eva.Animate(AnimationState.Run);
+                }
+                else
+                {
+                    speed *= eva.walkSpeed;
+                    eva.Animate(AnimationState.Walk);
+                }
+            }
+            else if (geeForce >= eva.minWalkingGee)
+            {
+                speed *= eva.walkSpeed;
+                eva.Animate(AnimationState.Walk);
             }
             else
             {
-                Loaded = true;
+                speed *= eva.boundSpeed * 1.25f; //speedup
+                eva.Animate(AnimationState.BoundSpeed);
             }
-
-            this._part = vessel.parts[0];
-            this._eva = ((KerbalEVA)_part.Modules["KerbalEVA"]);
-
-            //module on last.
-            this._module = (EvaModule)_eva.GetComponent(typeof(EvaModule));
-            this._module.Initialize(this);
 
         }
 
+        internal void CheckDistance(Vector3d move, float speed, double sqrDist)
+        {
+            IEvaControlType controlType = null;
+
+            if (mode == Mode.Follow){       controlType = formation;    }
+            else if (mode == Mode.Patrol){  controlType = patrol;       }
+            else if (mode == Mode.Order){   controlType = order;        }
+
+            if (controlType.CheckDistance(sqrDist))
+            {
+                eva.Animate(AnimationState.Idle);
+
+                if (controlType is EvaOrder)
+                {
+                    mode = Mode.None;
+                }
+            }
+            else
+            {
+                if (AbleToMove())
+                {
+                    Move(move, speed);
+                }
+            }
+        }
+
+        private bool AbleToMove()
+        {
+            return (!eva.isRagdoll) | (!eva.rigidbody.isKinematic);
+        }
         /// <summary>
         /// Move the current kerbal to target.
         /// </summary>
         /// <param name="move"></param>
         /// <param name="speed"></param>
-        private void Move(Vector3d move, float speed)
+        internal void Move(Vector3d move, float speed)
         {
             #region Move & Rotate Kerbal
 
@@ -168,291 +332,65 @@ namespace MSD.EvaFollower
             //rotate            
             if (move != Vector3d.zero)
             {
-                if (_eva.JetpackDeployed)
+                if (eva.JetpackDeployed)
                 {
-                    _eva.PackToggle();
+                    eva.PackToggle();
                 }
                 else
-                {                
+                {
                     //rotation
-                    Quaternion from = _part.vessel.transform.rotation;
-                    Quaternion to = Quaternion.LookRotation(move, _eva.fUp);
-                    Quaternion result = Quaternion.RotateTowards(from, to, _eva.turnRate);
+                    Quaternion from = eva.part.vessel.transform.rotation;
+                    Quaternion to = Quaternion.LookRotation(move, eva.fUp);
+                    Quaternion result = Quaternion.RotateTowards(from, to, eva.turnRate);
 
-                    _part.vessel.SetRotation(result);
+                    eva.part.vessel.SetRotation(result);
 
-                       //move   
-                    _eva.rigidbody.MovePosition(_eva.rigidbody.position + move);
-                                       
+                    //move   
+                    eva.rigidbody.MovePosition(eva.rigidbody.position + move);
                 }
             }
 
             #endregion
         }
-               
-        /// <summary>
-        /// Animate the kerbal
-        /// </summary>
-        /// <param name="state">Set the animation to use and set</param>
-        /// <param name="force">Force to set the animation. Should be used after ragedoll.</param>
-        public void Animate(AnimationState state, bool force)
-        {           
-            string anim = GetAnimationName(state);
-                        
-            if (!string.IsNullOrEmpty(anim))
-            {
-                _eva.animation.CrossFade(anim);
-            }
 
-            _currentAnimationType = state;
+        internal void CheckModeIsNone()
+        {
+            if(mode == Mode.None)
+                eva.Animate(AnimationState.Idle);
+        }
+        
+        internal void Order(Vector3d position, Vector3d vector3d)
+        {
+            order.Move(position, vector3d);
         }
 
+        Vector3 oldPosition;
+        int counter = 0;
 
-        /// <summary>
-        /// Get the name of an animation from a AnimationState
-        /// </summary>
-        /// <param name="state"></param>
-        /// <returns></returns>
-        private string GetAnimationName(AnimationState state)
+        internal void AILogic(double sqrDistance)
         {
-            string anim = "idle";
+            bool complete = (sqrDistance < 3.0);
 
-            switch (state)
+            if (complete)
+                return;
+
+            Vector3 position = eva.transform.position;
+
+            if (position == oldPosition)
             {
-                case AnimationState.None: { } break;
-                case AnimationState.Swim: { anim = "swim_forward"; } break;
-                case AnimationState.Run: { anim = "wkC_run"; } break;
-                case AnimationState.Walk: { anim = "wkC_forward"; } break;
-                case AnimationState.BoundSpeed: { anim = "wkC_loG_forward"; } break;
-                case AnimationState.Idle:
-                    {
-                        if (_part.WaterContact)
-                            anim = "swim_idle";
-                        else if (_eva.JetpackDeployed)
-                            anim = "jp_suspended";
-                        else
-                            anim = "idle";
+                ++counter;
 
-                    } break;
-            }
-            return anim;
-        }
-
-        /// <summary>
-        /// Check if the current animation is what it clams to be.
-        /// </summary>
-        /// <returns></returns>
-        private bool IsStatedAnimationPlaying()
-        {
-            string anim = GetAnimationName(_currentAnimationType);
-            return _eva.animation[anim].enabled && !_eva.isRagdoll;
-        }
-
-        public void UpdateLamps()
-        {
-            //if it's dark, update the lamps.
-            bool lampOn = Util.IsDark(_eva.transform);
-            _eva.TurnLamp(lampOn);
-        }
-
-        /// <summary>
-        /// Update the container. 
-        /// </summary>
-        /// <param name="geeForce"></param>
-        public void Update(double geeForce)
-        {
-     
-            #region Check kerbal state
-            if (_eva.isRagdoll)
-            {
-                //Much Kudos to Razchek for finally slaying the Ragdoll Monster!
-                if (_eva.canRecover && _eva.fsm.TimeAtCurrentState > 1.21f && !_eva.part.GroundContact)
-                { 
-                    foreach (KFSMEvent stateEvent in _eva.fsm.CurrentState.StateEvents)
-                    {
-                        if (stateEvent.name == "Recover Start")
-                        {
-                            _eva.fsm.RunEvent(stateEvent);
-                            break;
-                        }
-                    }
-                }
-            }
-
-
-            #endregion
-
-            Vector3d move = -_eva.vessel.GetWorldPos3D();
-     
-            #region Get next Action, Formation or Patrol
-
-      
-            if (_evaMode == Mode.Follow)
-            {
-                if (_formation.Leader != null) //reset if leader is gone
-                    _formation.GetNextTarget(ref move);
-                else
-                    _evaMode = Mode.None;
-
-            }
-            else if (_evaMode == Mode.Patrol)
-            {
-                if (_patrol.referenceBody == FlightGlobals.currentMainBody.bodyName)
+                if (counter > 4)
                 {
-                    _patrol.GetNextTarget(ref move);
+                    //stuck
+                    eva.Jump();
                 }
-            }
-            else if (_evaMode == EvaFollower.Mode.Order)
-            {
-                _order.GetNextTarget(ref move);
-            }
-
-            #endregion
-
-            #region Path Finding
-
-            double sqrDist = move.sqrMagnitude;
-            float speed = TimeWarp.deltaTime;
-
-            if (_eva.OnALadder)
-            {
-                _eva.ReleaseLadder();
-            }
-                        
-            #endregion
-
-            #region Break Free Code
-
-            if( _evaMode == EvaFollower.Mode.Order &&
-                (FlightGlobals.ActiveVessel == _eva.vessel))
-            {
-                if (Input.GetKey(KeyCode.W))
-                    _evaMode = EvaFollower.Mode.None;
-                if (Input.GetKey(KeyCode.S))
-                    _evaMode = EvaFollower.Mode.None;
-                if (Input.GetKey(KeyCode.A))
-                    _evaMode = EvaFollower.Mode.None;
-                if (Input.GetKey(KeyCode.D))
-                    _evaMode = EvaFollower.Mode.None; 
-                if (Input.GetKey(KeyCode.Q))
-                    _evaMode = EvaFollower.Mode.None;
-                if (Input.GetKey(KeyCode.E))
-                    _evaMode = EvaFollower.Mode.None;
-
-                if (_evaMode == EvaFollower.Mode.None)
-                    return;
-            }
-
-            #endregion
-
-            #region Animation Logic
-
-            if (_part.WaterContact)
-            {
-                speed *= _eva.swimSpeed;
-                Animate(AnimationState.Swim, false);
-            }
-            else if (_eva.JetpackDeployed)
-            {
-                speed *= 1f;
-                Animate(AnimationState.Idle, false);
-            }
-            else if (sqrDist > 5f && geeForce >= _eva.minRunningGee)
-            {
-                if (_evaMode == Mode.Patrol || _evaMode == EvaFollower.Mode.Order)
-                {
-                    bool allowRunning = false;
-
-                    if (_evaMode == EvaFollower.Mode.Patrol)
-                    {
-                        allowRunning = _patrol.AllowRunning;
-                    }
-                    else if (_evaMode == EvaFollower.Mode.Order)
-                    {
-                        allowRunning = _order.AllowRunning;
-                    }
-                    
-                    if (allowRunning)
-                    {
-                        speed *= _eva.runSpeed;
-                        Animate(AnimationState.Run, false);
-                    }
-                    else
-                    {
-                        speed *= _eva.walkSpeed;
-                        Animate(AnimationState.Walk, false);
-                    }
-                }
-                else
-                {
-                    speed *= _eva.runSpeed;
-                    Animate(AnimationState.Run, false);
-                }
-            }
-
-            else if (geeForce >= _eva.minWalkingGee)
-            {
-                speed *= _eva.walkSpeed;
-                Animate(AnimationState.Walk, false);
             }
             else
             {
-                speed *= _eva.boundSpeed * 1.25f; //speedup
-                Animate(AnimationState.BoundSpeed, false);
+                oldPosition = position;
+                counter = 0;
             }
-
- 
-
-            #endregion
-
-           // speed *= (float)geeForce;
-            move.Normalize();
-
-            #region Distance Logic
-
-            IEvaControlType controlType = null;
-
-            if (_evaMode == Mode.Follow)
-            {
-                controlType = _formation;
-            }
-            else if (_evaMode == Mode.Patrol)
-            {
-                controlType = _patrol;
-            }
-            else if (_evaMode == EvaFollower.Mode.Order)
-            {
-                controlType = _order;
-            }
-
-            if (controlType.CheckDistance(sqrDist))
-            {
-                Animate(AnimationState.Idle, false);
-
-                if (controlType is EvaOrder)
-                {
-                    _evaMode = EvaFollower.Mode.None;
-                }
-            }
-            else
-            {                
-                if (IsStatedAnimationPlaying())
-                {
-                    Move(move, speed);
-                }
-            }
-
-            #endregion
-
-            #region Reset Animation Mode Events
-
-            if (_evaMode == EvaFollower.Mode.None)
-            {
-                Animate(AnimationState.Idle, false);
-            }
-
-            #endregion
         }
-
     }
 }

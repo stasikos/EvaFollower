@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace MSD.EvaFollower
 {
@@ -10,7 +6,7 @@ namespace MSD.EvaFollower
     /// Add the module to all kerbals available. 
     /// </summary>
     [KSPAddon(KSPAddon.Startup.SpaceCentre, true)]
-    internal class EvaAddonAddModule : MonoBehaviour
+    class EvaAddonAddModule : MonoBehaviour
     {
         public void Awake()
         {

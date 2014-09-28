@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using UnityEngine;
 using SD = System.Diagnostics;
 
 namespace MSD.EvaFollower
 {
-    class EvaDebug 
+    public class EvaDebug 
     {
         //Debug log yes/no
         private static bool debugLogActive = true;

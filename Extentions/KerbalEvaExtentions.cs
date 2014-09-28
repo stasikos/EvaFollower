@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using UnityEngine;
 
 namespace MSD.EvaFollower
 {
-    internal static class KerbalEvaExtentions
+    static class KerbalEvaExtentions
     {
         public static Mesh helmetMesh = null;
         public static Mesh visorMesh = null;
@@ -124,6 +123,49 @@ namespace MSD.EvaFollower
                 }
             }
             catch { }
+        }
+
+        public static void RecoverFromRagdoll(this KerbalEVA eva)
+        {
+            //Much Kudos to Razchek for finally slaying the Ragdoll Monster!
+            if (eva.canRecover && eva.fsm.TimeAtCurrentState > 1.21f && !eva.part.GroundContact)
+            {
+                foreach (KFSMEvent stateEvent in eva.fsm.CurrentState.StateEvents)
+                {
+                    if (stateEvent.name == "Recover Start")
+                    {
+                        eva.fsm.RunEvent(stateEvent);
+                        break;
+                    }
+                }
+
+            }
+        }
+
+        public static void Animate(this KerbalEVA eva, AnimationState state)
+        {
+            string anim = "Idle";
+
+            switch (state)
+            {
+                case AnimationState.None: { } break;
+                case AnimationState.Swim: { anim = "swim_forward"; } break;
+                case AnimationState.Run: { anim = "wkC_run"; } break;
+                case AnimationState.Walk: { anim = "wkC_forward"; } break;
+                case AnimationState.BoundSpeed: { anim = "wkC_loG_forward"; } break;
+                case AnimationState.Idle:
+                    {
+                        if (eva.part.WaterContact)
+                            anim = "swim_idle";
+                        else if (eva.JetpackDeployed)
+                            anim = "jp_suspended";
+                        else
+                            anim = "idle";
+
+                    } break;
+            }
+
+            eva.animation.CrossFade(anim);
         }
 
         /// <summary>

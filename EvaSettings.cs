@@ -2,235 +2,204 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Xml;
 using System.IO;
-using UnityEngine;
 
 namespace MSD.EvaFollower
 {
-    [KSPAddon(KSPAddon.Startup.SpaceCentre, false)]
-    class EvaSettings : MonoBehaviour
+    class EvaSettings
     {
-        public static EvaSettings fetch;
+        private static bool savedNode = false;
+        private static bool nodesLoaded = false;
 
-        private bool savedNode = false; 
-        private bool nodesLoaded = false;
-        private List<XmlNode> buffer = new List<XmlNode>();
+        internal static bool displayDebugLines = false;
 
-        public void Start()
+        public static void LoadConfiguration()
         {
-            fetch = this;
-        }
-
-        public void Load()
-        {
-            if (HighLogic.LoadedScene == GameScenes.FLIGHT)
+            try
             {
-                EvaDebug.ProfileStart();
+                KSP.IO.TextReader tr = KSP.IO.TextReader.CreateForType<EvaSettings>("Config.cfg");
+                string[] lines = tr.ReadToEnd().Split('\n');
 
-                EvaDebug.DebugWarning("EvaSettings.Load()");
-                LoadConfig();
-                nodesLoaded = true;
+                foreach (var line in lines)
+                {
+                    string[] parts = line.Split(':');
 
-                EvaDebug.ProfileEnd("LoadConfig()");
+                    if (parts.Length > 1)
+                    {
+                        string name = parts[0].Trim();
+                        string value = parts[1].Trim();
+
+                        EvaDebug.DebugLog("EvaSettings: " + name);
+
+                        switch (name)
+                        {
+                            case "DisplayDebugLines": { displayDebugLines = bool.Parse(value); } break;
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                throw new Exception("[EFX] Config loading failed. ");
             }
         }
 
-        public void Save()
+        public static void SaveConfiguration()
+        {
+            KSP.IO.TextWriter tr = KSP.IO.TextWriter.CreateForType<EvaSettings>("Config.cfg");
+            tr.Write("DisplayDebugLines: true");
+            tr.Close();
+        }
+
+        public static void Load()
+        {
+            if (HighLogic.LoadedScene == GameScenes.FLIGHT)
+            {
+                LoadFunction();
+                nodesLoaded = true;
+            }
+
+        }
+
+        public static void LoadFunction()
+        {
+            EvaDebug.ProfileStart();
+
+            LoadFile();
+
+            EvaDebug.ProfileEnd("EvaSettings.Load()");
+        }
+
+
+        public static void Save()
         {
             if (nodesLoaded && !savedNode)
             {
-                EvaDebug.ProfileStart();
-
-                EvaDebug.DebugWarning("EvaSettings.Save()");
-                SaveConfig();
-
-                EvaDebug.ProfileEnd("SaveConfig()");
-
+                SaveFunction();
                 nodesLoaded = false;
                 savedNode = true;
             }
         }
 
-
-        private void LoadConfig()
+        public static void SaveFunction()
         {
-            try
-            {
-                KSP.IO.TextReader tr = KSP.IO.TextReader.CreateForType<EvaSettings>(String.Format("Evas-{0}.txt", HighLogic.CurrentGame.Title));
-                String strFile = tr.ReadToEnd();
-                tr.Close();
+            EvaDebug.ProfileStart();
 
-                if (string.IsNullOrEmpty(strFile))
-                    return;
-                
-                XmlDocument doc = new XmlDocument();
-                doc.LoadXml(strFile);
-                
-                XmlNodeList evas = doc["root"].GetElementsByTagName("EVA");
+            SaveFile();
 
-                foreach (XmlNode evaNode in evas)
-                {
-                    if (evaNode.Attributes["Id"] != null)
-                    {
-                        Guid id = new Guid(evaNode.Attributes["Id"].Value);
-
-                        EvaContainer eva = EvaController.fetch.GetEva(id);
-
-                        ReadEva(evaNode, eva);
-                    }
-                }
-                
-            }
-            catch { }
+            EvaDebug.ProfileEnd("EvaSettings.Save()");
         }
-
-        public void LoadEvaVesselConfig(Guid id)
+    
+        private static void LoadFile()
         {
-            try
+            KSP.IO.TextReader tr = KSP.IO.TextReader.CreateForType<EvaSettings>(String.Format("Evas-{0}.txt", HighLogic.CurrentGame.Title));
+            string file = tr.ReadToEnd();
+            tr.Close();
+
+            EvaTokenReader reader = new EvaTokenReader(file);
+
+            //read every eva.
+            while (!reader.EOF)
             {
-                KSP.IO.TextReader tr = KSP.IO.TextReader.CreateForType<EvaSettings>(String.Format("Evas-{0}.txt", HighLogic.CurrentGame.Title));
-                String strFile = tr.ReadToEnd();
-                tr.Close();
-
-                if (string.IsNullOrEmpty(strFile))
-                    return;
-
-                XmlDocument doc = new XmlDocument();
-                doc.LoadXml(strFile);
-
-                XmlNodeList evas = doc["root"].GetElementsByTagName("EVA");
-
-                foreach (XmlNode evaNode in evas)
-                {
-                    if (evaNode.Attributes["Id"] != null)
-                    {
-                        Guid cid = new Guid(evaNode.Attributes["Id"].Value);
-
-                        if (cid == id)
-                        {
-                            EvaContainer eva = EvaController.fetch.GetEva(id);
-
-                            if (eva != null)
-                                return;
-
-                            ReadEva(evaNode, eva);
-                            return;
-                        }
-                    }
-                }
-
-            }
-            catch { }
-        }
-
-        private void ReadEva(XmlNode evaNode, EvaContainer eva)
-        {
-            if (!eva.Loaded)
-            {
-                //Can't load.. Do not remove old data.
-                buffer.Add(evaNode);
-
-            }
-
-            if (evaNode.Attributes["Selected"] != null)
-            {
-                eva.Selected = bool.Parse(evaNode.Attributes["Selected"].Value);
-            }
-            if (evaNode.Attributes["Mode"] != null)
-            {
-                eva.Mode = (Mode)Enum.Parse(typeof(Mode), evaNode.Attributes["Mode"].Value);
-            }
-            if (evaNode.Attributes["HelmetOn"] != null)
-            {
-                eva.HelmetOn = bool.Parse(evaNode.Attributes["HelmetOn"].Value);
-                eva.EVA.ShowHelmet(eva.HelmetOn);
-            }
-
-
-            foreach (XmlNode child in evaNode.ChildNodes)
-            {
-                switch (child.Name)
-                {
-                    case "Formations": { eva.Formation.Load(child); } break;
-                    case "Patrol": { eva.Patrol.Load(child); } break;
-                    case "Order": { eva.Order.Load(child); } break;
-                }
+                LoadEva(reader.NextToken('[', ']'));
             }
         }
 
-        private void SaveConfig()
+        private static void LoadEva(string eva)
         {
+            Guid flightID = GetFlightIDFromEvaString(eva);
+            EvaContainer container = EvaController.fetch.GetEva(flightID);
+
+            if (container != null)
+            {
+                container.FromSave(eva);
+            }
+        }
+
+        private static Guid GetFlightIDFromEvaString(string evaString)
+        {
+            EvaTokenReader reader = new EvaTokenReader(evaString);
+
+            string sflightID = reader.NextTokenEnd(',');
+
+            //Load the eva
+            Guid flightID = new Guid(sflightID);
+            return flightID;
+        }
+        private static Status GetStatusFromEvaString(string evaString)
+        {
+            EvaTokenReader reader = new EvaTokenReader(evaString);
+
+            reader.NextTokenEnd(',');
+            reader.NextTokenEnd(',');
+            string status = reader.NextTokenEnd(',');
+
+            return (Status)Enum.Parse(typeof(Status), status);
+        }
+
+
+        private static void SaveFile()
+        {
+            //Load the old one from the list.
+            #region Load 
+            KSP.IO.TextReader tr = KSP.IO.TextReader.CreateForType<EvaSettings>(String.Format("Evas-{0}.txt", HighLogic.CurrentGame.Title));
+            string file = tr.ReadToEnd();
+            tr.Close();
+
+            EvaTokenReader reader = new EvaTokenReader(file);
+
+            Dictionary<Guid, string> oldKerbals = new Dictionary<Guid, string>();
+
+            //read every eva.
+            while (!reader.EOF)
+            {
+                string evaString = reader.NextToken('[', ']');
+                Guid flightID = GetFlightIDFromEvaString(evaString);
+                oldKerbals.Add(flightID, evaString);
+            }
+            #endregion
+
+            ///now save it.
             KSP.IO.TextWriter tw = KSP.IO.TextWriter.CreateForType<EvaSettings>(String.Format("Evas-{0}.txt", HighLogic.CurrentGame.Title));
 
+            List<Guid> inMemory = new List<Guid>();
 
-            XmlDocument doc = new XmlDocument();
-            XmlNode root = doc.CreateElement("root");
-
-            foreach (var eva in EvaController.fetch.Collection)
+            foreach (var eva in EvaController.fetch.collection)
             {
-                if (eva.Loaded)
+                inMemory.Add(eva.flightID);
+
+                SaveEvaNode(tw, eva);                
+            }
+
+             
+            foreach (var g in oldKerbals)
+            {
+                if (inMemory.Contains(g.Key))
                 {
-                    SaveEva(doc, root, eva);
+                    //don't have to save.
                 }
                 else
                 {
-                    foreach (var b in buffer)
-                    {                       
-                        root.AppendChild(doc.ImportNode(b,true));
+                    Status status = GetStatusFromEvaString(g.Value);
+
+                    if (status == Status.None)
+                    {
+                        //add it.
+                        EvaContainer eva = new EvaContainer(g.Key);
+                        eva.FromSave(g.Value);
+                        SaveEvaNode(tw, eva);
                     }
                 }
             }
-            doc.AppendChild(root);
 
-            string document = "";
-            using (var stringWriter = new StringWriter())
-            {
-                using (var xmlTextWriter = XmlWriter.Create(stringWriter))
-                {
-                    doc.WriteTo(xmlTextWriter);
-                    xmlTextWriter.Flush();
-                    document = stringWriter.GetStringBuilder().ToString();
-                }
-            }
-            tw.Write(document);
             tw.Close();
-
-            buffer.Clear();
         }
 
-        private void SaveEva(XmlDocument doc, XmlNode root, EvaContainer eva)
+
+
+        private static void SaveEvaNode(KSP.IO.TextWriter tw, EvaContainer eva)
         {
-            root.AppendChild(doc.CreateWhitespace("\r\n"));
-            XmlElement element = doc.CreateElement("EVA");
-
-            XmlAttribute xa0 = doc.CreateAttribute("Id");
-            xa0.Value = eva.FlightID.ToString();
-            element.Attributes.Append(xa0);
-
-            XmlAttribute xa1 = doc.CreateAttribute("Selected");
-            xa1.Value = eva.Selected.ToString();
-            element.Attributes.Append(xa1);
-
-            XmlAttribute xa2 = doc.CreateAttribute("Mode");
-            xa2.Value = eva.Mode.ToString();
-            element.Attributes.Append(xa2);
-
-            XmlAttribute xa3 = doc.CreateAttribute("HelmetOn");
-            xa3.Value = eva.HelmetOn.ToString();
-            element.Attributes.Append(xa3);
-
-            //Formations
-            eva.Formation.Save(doc, element);
-
-            //Patrols     
-            eva.Patrol.Save(doc, element);
-
-            //Order
-            eva.Order.Save(doc, element);
-
-            root.AppendChild(element);
-            root.AppendChild(doc.CreateWhitespace("\r\n"));
-        }
+            tw.Write("[" + eva.ToSave() + "]" + Environment.NewLine);
+        }        
     }
 }
