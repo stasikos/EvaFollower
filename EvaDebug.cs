@@ -6,8 +6,52 @@ using SD = System.Diagnostics;
 
 namespace MSD.EvaFollower
 {
-    public class EvaDebug 
+
+#if DEBUG
+     [KSPAddon(KSPAddon.Startup.MainMenu, true)]
+    public class EvaDebug : MonoBehaviour
     {
+         private Rect pos;
+         private string content = "None";
+         private GUIStyle style = null;
+ 
+         public void Start()
+         {
+             DontDestroyOnLoad(this);
+         }
+
+         public void OnGUI()
+         {
+             if (HighLogic.LoadedScene == GameScenes.FLIGHT)
+             {
+                 if (style == null)
+                 {
+                     pos = new Rect(Screen.width - 80, 60, 50, 60);
+
+                     style = new GUIStyle(GUI.skin.label);
+                     style.alignment = TextAnchor.UpperRight;
+                     style.normal.textColor = new Color(0.8f, 0.8f, 0.8f, 0.6f);
+                 }
+
+                 GUI.Label(pos, content, style);
+             }
+         }
+
+         public void Update()
+         {
+             if (HighLogic.LoadedScene == GameScenes.FLIGHT)
+             {
+                 content = "Active Kerbals: " + EvaController.fetch.collection.Count;
+             }
+             else
+             {
+                 content = "None";
+             }
+         }
+#else 
+          public class EvaDebug : MonoBehaviour
+        {
+#endif
         //Debug log yes/no
         private static bool debugLogActive = true;
         

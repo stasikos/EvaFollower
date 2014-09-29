@@ -127,6 +127,12 @@ namespace MSD.EvaFollower
 
         public static void RecoverFromRagdoll(this KerbalEVA eva)
         {
+            if (eva.rigidbody.isKinematic)
+                return;
+
+            if (!eva.isEnabled)
+                return;
+
             //Much Kudos to Razchek for finally slaying the Ragdoll Monster!
             if (eva.canRecover && eva.fsm.TimeAtCurrentState > 1.21f && !eva.part.GroundContact)
             {

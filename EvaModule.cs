@@ -126,8 +126,7 @@ namespace MSD.EvaFollower
         [KSPEvent(guiActive = true, guiName = "Add Waypoint", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
         public void SetPoint()
         {
-                currentContainer.SetWaypoint();            
-                EvaDebug.DebugWarning("Setpoint: Succed");           
+                currentContainer.SetWaypoint();                     
         }
 
         [KSPEvent(guiActive = true, guiName = "Wait", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
@@ -164,7 +163,7 @@ namespace MSD.EvaFollower
         [KSPEvent(guiActive = true, guiName = "Toggle Helmet", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
         public void ToggleHelmet()
         {
-            currentContainer.ToggleHelmet();
+                currentContainer.ToggleHelmet();
         }
 
         /*
@@ -182,7 +181,7 @@ namespace MSD.EvaFollower
 
             currentContainer.EVA.headLamp.light.intensity += 100;
         }
-        */
+        
 
         [KSPEvent(guiActive = true, guiName = "Save", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
         public void ClearSave()
@@ -196,5 +195,7 @@ namespace MSD.EvaFollower
         {
             EvaSettings.LoadFunction();
         }
+        */
+
     }
 }

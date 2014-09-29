@@ -4,50 +4,45 @@ using UnityEngine;
 
 namespace MSD.EvaFollower
 {
+
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     class EvaController : MonoBehaviour
     {
         public static EvaController fetch;
-
         public List<EvaContainer> collection = new List<EvaContainer>();
-
+        
         public void Start()
         {
 
-            EvaDebug.DebugWarning("EvaController.Start()");
+            //EvaDebug.DebugWarning("EvaController.Start()");
             //initialize the singleton.
             fetch = this;
-
-            GameEvents.onFlightReady.Add(onFlightReadyCallback);
-
-            GameEvents.onVesselCreate.Add(OnVesselCreate);
-            GameEvents.onVesselLoaded.Add(OnVesselLoaded);
-            GameEvents.onVesselChange.Add(OnVesselChange);
-            GameEvents.onVesselTerminated.Add(OnVesselTerminated);
+                     
+            GameEvents.onPartPack.Add(OnPartPack);
+            GameEvents.onPartUnpack.Add(OnPartUnpack);
             
             GameEvents.onCrewOnEva.Add(OnCrewOnEva);
             GameEvents.onCrewBoardVessel.Add(OnCrewBoardVessel);
             GameEvents.onCrewKilled.Add(OnCrewKilled);
-            
+
             GameEvents.onGameStateSave.Add(OnSave);
+            GameEvents.onFlightReady.Add(onFlightReadyCallback);
         }
 
         public void OnDestroy()
         {
             //EvaDebug.DebugWarning("EvaController.OnDestroy()");
         
-            GameEvents.onFlightReady.Remove(onFlightReadyCallback);
-
-            GameEvents.onVesselCreate.Remove(OnVesselCreate);
-            GameEvents.onVesselLoaded.Remove(OnVesselLoaded);
-            GameEvents.onVesselChange.Remove(OnVesselChange);
-            GameEvents.onVesselTerminated.Remove(OnVesselTerminated);
-
+            
+            GameEvents.onPartPack.Remove(OnPartPack);
+            GameEvents.onPartUnpack.Remove(OnPartUnpack);
+        
             GameEvents.onCrewOnEva.Remove(OnCrewOnEva);
             GameEvents.onCrewBoardVessel.Remove(OnCrewBoardVessel);
             GameEvents.onCrewKilled.Remove(OnCrewKilled);
 
             GameEvents.onGameStateSave.Remove(OnSave);
+            GameEvents.onFlightReady.Remove(onFlightReadyCallback);
         }
            
         /// <summary>
@@ -57,57 +52,41 @@ namespace MSD.EvaFollower
         {
             //Load the eva list.
             //EvaDebug.DebugLog("onFlightReadyCallback()");
-            FetchEVAS();
-        }
-
-        /// <summary>
-        /// Fetch all evas in the universe.
-        /// </summary>
-        private void FetchEVAS()
-        {
-            foreach (Vessel vessel in FlightGlobals.Vessels)
-            {
-                AddEva(vessel);
-            }
-
             EvaSettings.Load();
         }
-
 
         public void OnSave(ConfigNode node)
         {
             //Save the eva list.
-            //EvaDebug.DebugLog("OnSave()");
+            // Might be double.
+            foreach (var item in collection)
+            {
+                EvaSettings.SaveEva(item);
+            }
 
             EvaSettings.Save();
         }
 
-        private void OnVesselCreate(Vessel vessel)
+        public void OnPartPack(Part part)
         {
-            //add new kerbal, or load it.
-            //EvaDebug.DebugLog("OnVesselCreate()");
-            AddEva(vessel);
+            if (part.vessel.isEVA)
+            {
+               //save before pack
+                //EvaDebug.DebugWarning("Pack: " + part.vessel.name);
+                                
+                Unload(part.vessel, false);
+            }
         }
 
-        public void OnVesselLoaded(Vessel vessel)
+        public void OnPartUnpack(Part part)
         {
-            //add new kerbal, or load it.
-            //EvaDebug.DebugLog("OnVesselCreate()");
-            AddEva(vessel);
-        }
+            if (part.vessel.isEVA)
+            {               
+                //save before pack
+                //EvaDebug.DebugWarning("Unpack: " + part.vessel.name);
 
-
-        public void OnVesselChange(Vessel vessel)
-        {
-            //EvaDebug.DebugLog("OnVesselChange()");
-            //AddEva(vessel);
-        }
-
-        public void OnVesselTerminated(ProtoVessel protoVessel)
-        {
-            //Remove protoVessel.
-            //EvaDebug.DebugLog("OnVesselTerminated()");
-            //RemoveEva(protoVessel.vesselID);
+                Load(part.vessel);
+            }
         }
 
         /// <summary>
@@ -118,7 +97,7 @@ namespace MSD.EvaFollower
         {
             //add new kerbal
             //EvaDebug.DebugLog("OnCrewOnEva()");
-            AddEva(e.to.vessel);
+            Load(e.to.vessel);
         }
 
         /// <summary>
@@ -129,7 +108,7 @@ namespace MSD.EvaFollower
         {
             //remove kerbal
             //EvaDebug.DebugLog("OnCrewBoardVessel()");
-            RemoveEva(e.from.vessel);
+            Unload(e.from.vessel, true);
         }
 
         /// <summary>
@@ -139,60 +118,68 @@ namespace MSD.EvaFollower
         public void OnCrewKilled(EventReport report)
         {
             //EvaDebug.DebugLog("OnCrewKilled()");
-            RemoveEva(report.origin.vessel);
+            Unload(report.origin.vessel, true);
         }
 
-        public void AddEva(Vessel vessel)
+        public void Load(Vessel vessel)
         {
             if (!vessel.isEVA)
+            {
+                EvaDebug.DebugWarning("Tried loading a non eva.");
                 return;
+            }
+
+            KerbalEVA currentEVA = vessel.GetComponent<KerbalEVA>();
 
             if (!Contains(vessel.id))
             {
                 EvaContainer container = new EvaContainer(vessel.id);
 
-                KerbalEVA eva = vessel.GetComponent<KerbalEVA>();
-
-                if (eva == null)
-                    return; //skip for now.
-
-                if (vessel.loaded)
-                    container.Load(eva);
+                //load the vessel here.
+                container.Load(currentEVA);
+                EvaSettings.LoadEva(container);
 
                 collection.Add(container);
-
             }
             else
             {
+                //Reload
                 EvaContainer container = GetEva(vessel.id);
 
-                if (container.Loaded)
-                    return;
-
-                KerbalEVA eva = vessel.GetComponent<KerbalEVA>();
-
-                if (eva == null)
-                    return; //skip for now.
-
-                if (vessel.loaded)
-                    container.Load(eva);
+                container.Load(currentEVA);
+                EvaSettings.LoadEva(container);
             }
         }
 
-        public void RemoveEva(Vessel vessel)
+        public void Unload(Vessel vessel, bool delete)
         {
-            lock (collection)
+            if (!vessel.isEVA)
             {
-                //EvaDebug.DebugLog("RemoveEva()");
-
-                for (int i = 0; i < collection.Count; i++)
-                {
-                    if (collection[i].flightID == vessel.id)
-                    {
-                        collection[i].Unload();
-                    }
-                }
+                EvaDebug.DebugWarning("Tried unloading a non eva.");
+                return;
             }
+
+            //EvaDebug.DebugLog("Unload(" + vessel.name + ")");
+
+            foreach (var item in collection)
+            {
+                if(item.flightID == vessel.id)
+                {
+                    if (delete)
+                    {
+                       item.status = Status.Removed;
+                    }
+
+                    //unload the vessel here. 
+                    item.Unload();
+                    EvaSettings.SaveEva(item);
+
+
+                    //EvaDebug.DebugLog("Remove EVA: (" + vessel.name + ")");
+                    collection.Remove(item);
+                    break;
+                }
+            }     
         }
 
         internal bool Contains(Guid id)
@@ -208,7 +195,7 @@ namespace MSD.EvaFollower
             return false;
         }
 
-
+        
         internal EvaContainer GetEva(Guid flightID)
         {
             for (int i = 0; i < collection.Count; i++)

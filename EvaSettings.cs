@@ -8,113 +8,162 @@ namespace MSD.EvaFollower
 {
     class EvaSettings
     {
-        private static bool savedNode = false;
-        private static bool nodesLoaded = false;
-
         internal static bool displayDebugLines = false;
+
+        private static Dictionary<Guid, string> collection = new Dictionary<Guid, string>();
+
+        private static bool isLoaded = false;
 
         public static void LoadConfiguration()
         {
-            try
-            {
-                KSP.IO.TextReader tr = KSP.IO.TextReader.CreateForType<EvaSettings>("Config.cfg");
-                string[] lines = tr.ReadToEnd().Split('\n');
-
-                foreach (var line in lines)
+            //try{
+                if (FileExcist("Config.cfg"))
                 {
-                    string[] parts = line.Split(':');
+                    KSP.IO.TextReader tr = KSP.IO.TextReader.CreateForType<EvaSettings>("Config.cfg");
+                    string[] lines = tr.ReadToEnd().Split('\n');
 
-                    if (parts.Length > 1)
+                    foreach (var line in lines)
                     {
-                        string name = parts[0].Trim();
-                        string value = parts[1].Trim();
+                        string[] parts = line.Split('=');
 
-                        EvaDebug.DebugLog("EvaSettings: " + name);
-
-                        switch (name)
+                        if (parts.Length > 1)
                         {
-                            case "DisplayDebugLines": { displayDebugLines = bool.Parse(value); } break;
+                            string name = parts[0].Trim();
+                            string value = parts[1].Trim();
+                            
+                            switch (name)
+                            {
+                                case "ShowDebugLines": { displayDebugLines = bool.Parse(value); } break;
+                            }
                         }
                     }
                 }
-            }
-            catch
-            {
-                throw new Exception("[EFX] Config loading failed. ");
-            }
+            //}
+            //catch
+            //{
+            //    throw new Exception("[EFX] Config loading failed. ");
+            //}
         }
 
         public static void SaveConfiguration()
         {
             KSP.IO.TextWriter tr = KSP.IO.TextWriter.CreateForType<EvaSettings>("Config.cfg");
-            tr.Write("DisplayDebugLines: true");
+            tr.Write("ShowDebugLines = true");
             tr.Close();
+        }
+
+        public static bool FileExcist(string name)
+        {
+           return KSP.IO.File.Exists<EvaSettings>(name);
         }
 
         public static void Load()
         {
-            if (HighLogic.LoadedScene == GameScenes.FLIGHT)
-            {
-                LoadFunction();
-                nodesLoaded = true;
-            }
-
+            //EvaDebug.DebugWarning("OnLoad()");
+            //ScreenMessages.PostScreenMessage("Loading Kerbals...", 3, ScreenMessageStyle.LOWER_CENTER);
+            LoadFunction();
         }
 
         public static void LoadFunction()
         {
             EvaDebug.ProfileStart();
-
             LoadFile();
-
             EvaDebug.ProfileEnd("EvaSettings.Load()");
+            isLoaded = true;
         }
-
-
+        
         public static void Save()
         {
-            if (nodesLoaded && !savedNode)
+            if (isLoaded)
             {
+                EvaDebug.DebugWarning("OnSave()");
+                //ScreenMessages.PostScreenMessage("Saving Kerbals...", 3, ScreenMessageStyle.LOWER_CENTER);
                 SaveFunction();
-                nodesLoaded = false;
-                savedNode = true;
+
+                isLoaded = false;
             }
         }
 
         public static void SaveFunction()
         {
             EvaDebug.ProfileStart();
-
             SaveFile();
-
             EvaDebug.ProfileEnd("EvaSettings.Save()");
         }
-    
+
+        public static void LoadEva(EvaContainer container)
+        {
+
+            //EvaDebug.DebugWarning("EvaSettings.LoadEva(" + container.Name + ")");
+
+            //The eva was already has a old save.
+            //Load it. 
+            if (collection.ContainsKey(container.flightID))
+            {
+                //string evaString = collection[container.flightID];
+                //EvaDebug.DebugWarning(evaString);
+
+                container.FromSave(collection[container.flightID]);
+            }
+            else
+            {
+                //No save yet.                
+            }
+        }
+        public static void SaveEva(EvaContainer container){
+
+            //EvaDebug.DebugWarning("EvaSettings.SaveEva(" + container.Name + ")");
+
+            if (container.status == Status.Removed)
+            {
+                if (collection.ContainsKey(container.flightID))
+                {
+                    collection.Remove(container.flightID);
+                }
+            }
+            else
+            {
+                //The eva was already has a old save.
+                if (collection.ContainsKey(container.flightID))
+                {
+                    //Replace the old save.
+                    collection[container.flightID] = container.ToSave();
+                }
+                else
+                {
+                    //No save yet. Add it now.
+                    collection.Add(container.flightID, container.ToSave());
+                }
+            }
+        }
+
         private static void LoadFile()
         {
-            KSP.IO.TextReader tr = KSP.IO.TextReader.CreateForType<EvaSettings>(String.Format("Evas-{0}.txt", HighLogic.CurrentGame.Title));
-            string file = tr.ReadToEnd();
-            tr.Close();
-
-            EvaTokenReader reader = new EvaTokenReader(file);
-
-            //read every eva.
-            while (!reader.EOF)
+            string fileName  = String.Format("Evas-{0}.txt", HighLogic.CurrentGame.Title);
+            if (FileExcist(fileName))
             {
-                LoadEva(reader.NextToken('[', ']'));
+                KSP.IO.TextReader tr = KSP.IO.TextReader.CreateForType<EvaSettings>(fileName);
+
+                string file = tr.ReadToEnd();
+                tr.Close();
+
+                EvaTokenReader reader = new EvaTokenReader(file);
+
+                //read every eva.
+                while (!reader.EOF)
+                {
+                    //Load all the eva's in the list.
+                    LoadEva(reader.NextToken('[', ']'));
+                }
             }
         }
 
         private static void LoadEva(string eva)
         {
             Guid flightID = GetFlightIDFromEvaString(eva);
-            EvaContainer container = EvaController.fetch.GetEva(flightID);
-
-            if (container != null)
-            {
-                container.FromSave(eva);
-            }
+            collection.Add(flightID, eva);
         }
+    
 
         private static Guid GetFlightIDFromEvaString(string evaString)
         {
@@ -126,80 +175,20 @@ namespace MSD.EvaFollower
             Guid flightID = new Guid(sflightID);
             return flightID;
         }
-        private static Status GetStatusFromEvaString(string evaString)
-        {
-            EvaTokenReader reader = new EvaTokenReader(evaString);
-
-            reader.NextTokenEnd(',');
-            reader.NextTokenEnd(',');
-            string status = reader.NextTokenEnd(',');
-
-            return (Status)Enum.Parse(typeof(Status), status);
-        }
-
+   
 
         private static void SaveFile()
-        {
-            //Load the old one from the list.
-            #region Load 
-            KSP.IO.TextReader tr = KSP.IO.TextReader.CreateForType<EvaSettings>(String.Format("Evas-{0}.txt", HighLogic.CurrentGame.Title));
-            string file = tr.ReadToEnd();
-            tr.Close();
-
-            EvaTokenReader reader = new EvaTokenReader(file);
-
-            Dictionary<Guid, string> oldKerbals = new Dictionary<Guid, string>();
-
-            //read every eva.
-            while (!reader.EOF)
-            {
-                string evaString = reader.NextToken('[', ']');
-                Guid flightID = GetFlightIDFromEvaString(evaString);
-                oldKerbals.Add(flightID, evaString);
-            }
-            #endregion
-
-            ///now save it.
+        {  
             KSP.IO.TextWriter tw = KSP.IO.TextWriter.CreateForType<EvaSettings>(String.Format("Evas-{0}.txt", HighLogic.CurrentGame.Title));
-
-            List<Guid> inMemory = new List<Guid>();
-
-            foreach (var eva in EvaController.fetch.collection)
+            
+            foreach (var item in collection)
             {
-                inMemory.Add(eva.flightID);
-
-                SaveEvaNode(tw, eva);                
+                tw.Write("[" + item.Value + "]");
             }
-
-             
-            foreach (var g in oldKerbals)
-            {
-                if (inMemory.Contains(g.Key))
-                {
-                    //don't have to save.
-                }
-                else
-                {
-                    Status status = GetStatusFromEvaString(g.Value);
-
-                    if (status == Status.None)
-                    {
-                        //add it.
-                        EvaContainer eva = new EvaContainer(g.Key);
-                        eva.FromSave(g.Value);
-                        SaveEvaNode(tw, eva);
-                    }
-                }
-            }
-
+            
             tw.Close();
-        }
 
-
-
-        private static void SaveEvaNode(KSP.IO.TextWriter tw, EvaContainer eva)
-        {
-            tw.Write("[" + eva.ToSave() + "]" + Environment.NewLine);
-        }        
+            collection.Clear();
+        }              
     }
 }

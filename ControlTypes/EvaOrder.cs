@@ -47,6 +47,7 @@ namespace MSD.EvaFollower
 
         internal void FromSave(string order)
         {
+                //EvaDebug.DebugWarning("Order.FromSave()");
                 EvaTokenReader reader = new EvaTokenReader(order);
 
                 string sAllowRunning = reader.NextTokenEnd(',');

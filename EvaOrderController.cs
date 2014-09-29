@@ -36,7 +36,7 @@ namespace MSD.EvaFollower
         
         public void Start()
         {
-            EvaDebug.DebugWarning("EvaOrderController.Start()");
+            //EvaDebug.DebugWarning("EvaOrderController.Start()");
 
             //save config.
             //EvaSettings.SaveConfiguration();
@@ -277,6 +277,16 @@ namespace MSD.EvaFollower
                 }
                 #endregion
 
+          
+                if (!FlightGlobals.ActiveVessel.Landed && FlightGlobals.ActiveVessel.GetHeightFromSurface() > 25)
+                {
+                    DisableCursor();
+                    return;
+                }
+
+                if (HighLogic.LoadedScene != GameScenes.FLIGHT)
+                    return;
+                      
                 #region Handle Cursor...
                 if (showCursor)
                 {
@@ -293,12 +303,6 @@ namespace MSD.EvaFollower
                     SetCursorProperties();
                 }
                 #endregion
-
-                if (!FlightGlobals.ActiveVessel.Landed && FlightGlobals.ActiveVessel.GetHeightFromSurface() > 25)
-                {
-                    DisableCursor();
-                    return;
-                }
 
                 #region Select Multiple Kerbals
 
@@ -334,7 +338,7 @@ namespace MSD.EvaFollower
                     {
                         //get the kerbals in the selection.
                         foreach (EvaContainer container in EvaController.fetch.collection)
-                        {
+                        {                            
                             if (!container.Loaded)
                             {
                                 //Can't select what isn't there.
@@ -408,7 +412,7 @@ namespace MSD.EvaFollower
                     var offset = (FlightGlobals.ActiveVessel).GetWorldPos3D();
                     var position = (Vector3d)hitInfo.point;
 
-                    foreach (var item in EvaController.fetch.collection)
+                    foreach (var item in EvaController.fetch.collection.ToArray())
                     {
                         if (!item.Loaded)
                             return;

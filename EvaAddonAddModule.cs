@@ -23,7 +23,4 @@ namespace MSD.EvaFollower
         }
 
     }
-
-
-
 }

@@ -77,6 +77,7 @@ namespace MSD.EvaFollower
         {
             try
             {
+                //EvaDebug.DebugWarning("Formation.FromSave()");
                 formation = formation.Remove(0, 7); //Leader:
                 
                 if (formation != "null")

@@ -127,6 +127,7 @@ namespace MSD.EvaFollower
         {
             try
             {
+                //EvaDebug.DebugWarning("Patrol.FromSave()");
                 EvaTokenReader reader = new EvaTokenReader(patrol);
 
                 string sAllowRunning = reader.NextTokenEnd(',');

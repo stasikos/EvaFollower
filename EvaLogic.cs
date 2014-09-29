@@ -9,7 +9,8 @@ namespace MSD.EvaFollower
     {
         public void Start()
         {
-            EvaDebug.DebugWarning("EvaLogic.Start()");
+            //EvaDebug.DebugWarning("EvaLogic.Start()");
+            
         }
         public void OnDestroy()
         {
@@ -20,6 +21,7 @@ namespace MSD.EvaFollower
         {
             if (!FlightGlobals.ready || PauseMenu.isOpen)
                 return;
+
 
             try
             {
@@ -41,7 +43,7 @@ namespace MSD.EvaFollower
                     //Turn the lights on when dark.     
                     //Skip for now, too buggy..
                     //eva.UpdateLamps();
-                   
+
                     if (eva.mode == Mode.None)
                     {
                         //Nothing to do here.
@@ -56,7 +58,7 @@ namespace MSD.EvaFollower
                     }
 
                     Vector3d move = -eva.Position;
-                    
+
                     //Get next Action, Formation or Patrol
                     Vector3d target = eva.GetNextTarget();
 
@@ -66,35 +68,39 @@ namespace MSD.EvaFollower
 
                     double sqrDist = move.sqrMagnitude;
                     float speed = TimeWarp.deltaTime;
-
-                    eva.AILogic(sqrDist);
-
-                    //Break Free Code
+                    
                     if (eva.OnALadder)
                     {
                         eva.ReleaseLadder();
                     }
 
-                    if (eva.IsActive && eva.mode == Mode.Order)
+                    #region Break Free Code
+
+                    if (eva.IsActive)
                     {
                         Mode mode = eva.mode;
 
-                        if (Input.GetKeyUp(KeyCode.W))
+                        if (Input.GetKeyDown(KeyCode.W))
                             mode = EvaFollower.Mode.None;
-                        if (Input.GetKeyUp(KeyCode.S))
+                        if (Input.GetKeyDown(KeyCode.S))
                             mode = EvaFollower.Mode.None;
-                        if (Input.GetKeyUp(KeyCode.A))
+                        if (Input.GetKeyDown(KeyCode.A))
                             mode = EvaFollower.Mode.None;
-                        if (Input.GetKeyUp(KeyCode.D))
+                        if (Input.GetKeyDown(KeyCode.D))
                             mode = EvaFollower.Mode.None;
-                        if (Input.GetKeyUp(KeyCode.Q))
+                        if (Input.GetKeyDown(KeyCode.Q))
                             mode = EvaFollower.Mode.None;
-                        if (Input.GetKeyUp(KeyCode.E))
+                        if (Input.GetKeyDown(KeyCode.E))
                             mode = EvaFollower.Mode.None;
 
-                        if (eva.mode == Mode.None)
+                        if (mode == Mode.None)
+                        {
+                            //break free!
+                            eva.mode = mode; 
                             continue;
+                        }
                     }
+                    #endregion
 
                     //Animation Logic
                     eva.UpdateAnimations(sqrDist, ref speed);

@@ -13,8 +13,7 @@ namespace MSD.EvaFollower
         private bool selected = false;
         private bool loaded = false;
         private bool showHelmet = true;
-
-
+        
         private KerbalEVA eva;
 
         internal EvaFormation formation = new EvaFormation();
@@ -79,8 +78,17 @@ namespace MSD.EvaFollower
 
         public bool Loaded
         {
-            get { return loaded; }
+            get {
+                bool isLoaded = loaded;
+
+                if (loaded)
+                    isLoaded |= eva.isEnabled;
+
+                return isLoaded;
+            }
         }
+
+        public string Name { get; set; }
 
         public bool OnALadder { get { return eva.OnALadder; } }
 
@@ -97,22 +105,25 @@ namespace MSD.EvaFollower
             this.eva = eva;
             loaded = true;
 
+            //Set Name
+            this.Name = eva.name;
+
             //module on last.
             EvaModule module = (EvaModule)eva.GetComponent(typeof(EvaModule));
             module.Load(this);
 
-            EvaDebug.DebugLog("EvaContainer.Load("+eva.name+")");
+            //EvaDebug.DebugWarning("EvaContainer.Load("+eva.name+")");
         }
 
         public void Unload()
         {
-            EvaDebug.DebugLog("EvaContainer.Unload("+eva.name+")");
+            //EvaDebug.DebugWarning("EvaContainer.Unload(" + eva.name + ")");
             loaded = false;
         }
 
         internal string ToSave()
         {
-            return (flightID + "," + mode + "," + status + "," + selected + ","
+            return (flightID + "," + Name + "," + mode + "," + status + "," + selected + "," + showHelmet + ","
                 + this.formation.ToSave() + ","
                 + this.patrol.ToSave() + ","
                 + this.order.ToSave());
@@ -125,17 +136,22 @@ namespace MSD.EvaFollower
             //try
             //{
                 string sflightID = reader.NextTokenEnd(',');
-                string status = reader.NextTokenEnd(',');
+                string sName = reader.NextTokenEnd(','); 
                 string mode = reader.NextTokenEnd(',');
+                string status = reader.NextTokenEnd(',');
                 string selected = reader.NextTokenEnd(',');
+                string showHelmet = reader.NextTokenEnd(',');
 
                 string formation = reader.NextToken('(', ')'); reader.Consume();
                 string patrol = reader.NextToken('(', ')'); reader.Consume();
                 string order = reader.NextToken('(', ')');
 
                 this.mode = (Mode)Enum.Parse(typeof(Mode), mode);
+                this.status = (Status)Enum.Parse(typeof(Status), status);
                 this.selected = bool.Parse(selected);
-
+                this.showHelmet = bool.Parse(showHelmet);
+                this.Name = sName;
+                           
                 this.formation.FromSave(formation);
                 this.patrol.FromSave(patrol);
                 this.order.FromSave(order);
@@ -249,6 +265,7 @@ namespace MSD.EvaFollower
 
         internal void UpdateAnimations(double sqrDist, ref float speed)
         {
+
             double geeForce = FlightGlobals.currentMainBody.GeeASL;
 
             if (eva.part.WaterContact)
@@ -261,9 +278,14 @@ namespace MSD.EvaFollower
                 speed *= 1f;
                 eva.Animate(AnimationState.Idle);
             }
-            else if (sqrDist > 5f && geeForce >= eva.minRunningGee)
+            else if (geeForce >= eva.minRunningGee)//sqrDist > 5f &&
             {
-                if (AllowRunning || mode == Mode.Follow)
+                if (AllowRunning)
+                {
+                    speed *= eva.runSpeed;
+                    eva.Animate(AnimationState.Run);
+                }
+                else if (sqrDist > 5f && mode == Mode.Follow)
                 {
                     speed *= eva.runSpeed;
                     eva.Animate(AnimationState.Run);
@@ -315,7 +337,7 @@ namespace MSD.EvaFollower
 
         private bool AbleToMove()
         {
-            return (!eva.isRagdoll) | (!eva.rigidbody.isKinematic);
+            return (!eva.isEnabled) | (!eva.isRagdoll) | (!eva.rigidbody.isKinematic);
         }
         /// <summary>
         /// Move the current kerbal to target.
@@ -364,33 +386,8 @@ namespace MSD.EvaFollower
             order.Move(position, vector3d);
         }
 
-        Vector3 oldPosition;
-        int counter = 0;
 
-        internal void AILogic(double sqrDistance)
-        {
-            bool complete = (sqrDistance < 3.0);
 
-            if (complete)
-                return;
-
-            Vector3 position = eva.transform.position;
-
-            if (position == oldPosition)
-            {
-                ++counter;
-
-                if (counter > 4)
-                {
-                    //stuck
-                    eva.Jump();
-                }
-            }
-            else
-            {
-                oldPosition = position;
-                counter = 0;
-            }
-        }
+  
     }
 }
