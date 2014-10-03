@@ -3,12 +3,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using UnityEngine;
 
 namespace MSD.EvaFollower
 {
     class EvaSettings
     {
         internal static bool displayDebugLines = false;
+
+        //Should be bindable. 
+        internal static int selectMouseButton = 0;
+        internal static int dispatchMouseButton = 2;
+        
+        internal static string selectKeyButton = "o";
+        internal static string dispatchKeyButton = "p";
+
 
         private static Dictionary<Guid, string> collection = new Dictionary<Guid, string>();
 
@@ -48,8 +57,16 @@ namespace MSD.EvaFollower
         public static void SaveConfiguration()
         {
             KSP.IO.TextWriter tr = KSP.IO.TextWriter.CreateForType<EvaSettings>("Config.cfg");
-            tr.Write("ShowDebugLines = true");
+            tr.Write("ShowDebugLines = false");
+            tr.Write("# 0 = left, 1 = right, 2 = middle mouse button.");
+            tr.Write("SelectMouseButton = 0");
+            tr.Write("DispatchMouseButton = 2");
+            tr.Write("# Lookup Unity Keybinding for different options");
+            tr.Write("# use lower case or eat exception sandwich. ");
+            tr.Write("SelectKey = o");
+            tr.Write("DispatchKey = p");
             tr.Close();
+
         }
 
         public static bool FileExcist(string name)
@@ -59,8 +76,9 @@ namespace MSD.EvaFollower
 
         public static void Load()
         {
-            //EvaDebug.DebugWarning("OnLoad()");
-            //ScreenMessages.PostScreenMessage("Loading Kerbals...", 3, ScreenMessageStyle.LOWER_CENTER);
+            EvaDebug.DebugWarning("OnLoad()");
+            ScreenMessages.PostScreenMessage("Loading Kerbals...", 3, ScreenMessageStyle.LOWER_CENTER);
+            
             LoadFunction();
         }
 
@@ -77,7 +95,8 @@ namespace MSD.EvaFollower
             if (isLoaded)
             {
                 EvaDebug.DebugWarning("OnSave()");
-                //ScreenMessages.PostScreenMessage("Saving Kerbals...", 3, ScreenMessageStyle.LOWER_CENTER);
+                ScreenMessages.PostScreenMessage("Saving Kerbals...", 3, ScreenMessageStyle.LOWER_CENTER);
+                
                 SaveFunction();
 
                 isLoaded = false;
@@ -94,7 +113,7 @@ namespace MSD.EvaFollower
         public static void LoadEva(EvaContainer container)
         {
 
-            //EvaDebug.DebugWarning("EvaSettings.LoadEva(" + container.Name + ")");
+            EvaDebug.DebugWarning("EvaSettings.LoadEva(" + container.Name + ")");
 
             //The eva was already has a old save.
             //Load it. 
@@ -112,7 +131,7 @@ namespace MSD.EvaFollower
         }
         public static void SaveEva(EvaContainer container){
 
-            //EvaDebug.DebugWarning("EvaSettings.SaveEva(" + container.Name + ")");
+            EvaDebug.DebugWarning("EvaSettings.SaveEva(" + container.Name + ")");
 
             if (container.status == Status.Removed)
             {
@@ -148,6 +167,8 @@ namespace MSD.EvaFollower
                 tr.Close();
 
                 EvaTokenReader reader = new EvaTokenReader(file);
+
+                EvaDebug.DebugLog("Size KeySize: " + collection.Count);
 
                 //read every eva.
                 while (!reader.EOF)

@@ -14,7 +14,7 @@ namespace MSD.EvaFollower
         public void Start()
         {
 
-            //EvaDebug.DebugWarning("EvaController.Start()");
+            EvaDebug.DebugWarning("EvaController.Start()");
             //initialize the singleton.
             fetch = this;
                      
@@ -31,7 +31,7 @@ namespace MSD.EvaFollower
 
         public void OnDestroy()
         {
-            //EvaDebug.DebugWarning("EvaController.OnDestroy()");
+            EvaDebug.DebugWarning("EvaController.OnDestroy()");
         
             
             GameEvents.onPartPack.Remove(OnPartPack);
@@ -51,7 +51,7 @@ namespace MSD.EvaFollower
         private void onFlightReadyCallback()
         {
             //Load the eva list.
-            //EvaDebug.DebugLog("onFlightReadyCallback()");
+            EvaDebug.DebugLog("onFlightReadyCallback()");
             EvaSettings.Load();
         }
 
@@ -72,7 +72,7 @@ namespace MSD.EvaFollower
             if (part.vessel.isEVA)
             {
                //save before pack
-                //EvaDebug.DebugWarning("Pack: " + part.vessel.name);
+                EvaDebug.DebugWarning("Pack: " + part.vessel.name);
                                 
                 Unload(part.vessel, false);
             }
@@ -83,7 +83,7 @@ namespace MSD.EvaFollower
             if (part.vessel.isEVA)
             {               
                 //save before pack
-                //EvaDebug.DebugWarning("Unpack: " + part.vessel.name);
+                EvaDebug.DebugWarning("Unpack: " + part.vessel.name);
 
                 Load(part.vessel);
             }
@@ -96,7 +96,7 @@ namespace MSD.EvaFollower
         public void OnCrewOnEva(GameEvents.FromToAction<Part, Part> e)
         {
             //add new kerbal
-            //EvaDebug.DebugLog("OnCrewOnEva()");
+            EvaDebug.DebugLog("OnCrewOnEva()");
             Load(e.to.vessel);
         }
 
@@ -107,7 +107,7 @@ namespace MSD.EvaFollower
         public void OnCrewBoardVessel(GameEvents.FromToAction<Part, Part> e)
         {
             //remove kerbal
-            //EvaDebug.DebugLog("OnCrewBoardVessel()");
+            EvaDebug.DebugLog("OnCrewBoardVessel()");
             Unload(e.from.vessel, true);
         }
 
@@ -117,7 +117,7 @@ namespace MSD.EvaFollower
         /// <param name="report"></param>
         public void OnCrewKilled(EventReport report)
         {
-            //EvaDebug.DebugLog("OnCrewKilled()");
+            EvaDebug.DebugLog("OnCrewKilled()");
             Unload(report.origin.vessel, true);
         }
 
@@ -159,7 +159,7 @@ namespace MSD.EvaFollower
                 return;
             }
 
-            //EvaDebug.DebugLog("Unload(" + vessel.name + ")");
+            EvaDebug.DebugLog("Unload(" + vessel.name + ")");
 
             foreach (var item in collection)
             {
@@ -175,7 +175,7 @@ namespace MSD.EvaFollower
                     EvaSettings.SaveEva(item);
 
 
-                    //EvaDebug.DebugLog("Remove EVA: (" + vessel.name + ")");
+                    EvaDebug.DebugLog("Remove EVA: (" + vessel.name + ")");
                     collection.Remove(item);
                     break;
                 }
@@ -184,7 +184,7 @@ namespace MSD.EvaFollower
 
         internal bool Contains(Guid id)
         {
-            //EvaDebug.DebugLog("Contains()");
+            EvaDebug.DebugLog("Contains()");
 
             for (int i = 0; i < collection.Count; i++)
             {

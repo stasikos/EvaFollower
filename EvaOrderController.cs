@@ -30,13 +30,10 @@ namespace MSD.EvaFollower
         //animation variable
         private double angle = 0;
 
-        //Should be bindable. 
-        private int _selectMouseButton = 0;
-        private int _dispatchMouseButton = 2;
         
         public void Start()
         {
-            //EvaDebug.DebugWarning("EvaOrderController.Start()");
+            EvaDebug.DebugWarning("EvaOrderController.Start()");
 
             //save config.
             //EvaSettings.SaveConfiguration();
@@ -51,7 +48,7 @@ namespace MSD.EvaFollower
         }
         public void OnDestroy()
         {
-            //EvaDebug.DebugWarning("EvaOrderController.OnDestroy()");
+            EvaDebug.DebugWarning("EvaOrderController.OnDestroy()");
         }
 
         private void InitializeCursor()
@@ -284,9 +281,12 @@ namespace MSD.EvaFollower
                     return;
                 }
 
-                if (HighLogic.LoadedScene != GameScenes.FLIGHT)
+                if (HighLogic.LoadedScene != GameScenes.FLIGHT || MapView.MapIsEnabled)
                     return;
-                      
+
+                //add here something to change the selection ui in space.
+                
+
                 #region Handle Cursor...
                 if (showCursor)
                 {
@@ -306,11 +306,13 @@ namespace MSD.EvaFollower
 
                 #region Select Multiple Kerbals
 
-                if (Input.GetMouseButtonDown(_selectMouseButton))
+                if (Input.GetMouseButtonDown(EvaSettings.selectMouseButton)
+                    || Input.GetKeyDown(EvaSettings.selectKeyButton))
                 {
                     _startClick = Input.mousePosition;
                 }
-                else if (Input.GetMouseButtonUp(_selectMouseButton))
+                else if (Input.GetMouseButtonUp(EvaSettings.selectMouseButton)
+                    || Input.GetKeyUp(EvaSettings.selectKeyButton))
                 {
                     if (_selection.width < 0)
                     {
@@ -326,13 +328,15 @@ namespace MSD.EvaFollower
                     _startClick = -Vector3.one;
                 }
 
-                if (Input.GetMouseButton(_selectMouseButton))
+                if (Input.GetMouseButton(EvaSettings.selectMouseButton) 
+                    || Input.GetKey(EvaSettings.selectKeyButton))
                 {
                     _selection = new Rect(_startClick.x, InvertY(_startClick.y),
                         Input.mousePosition.x - _startClick.x, InvertY(Input.mousePosition.y) - InvertY(_startClick.y));
                 }
 
-                if (Input.GetMouseButton(_selectMouseButton))
+                if (Input.GetMouseButton(EvaSettings.selectMouseButton)
+                    || Input.GetKey(EvaSettings.selectKeyButton))
                 {
                     if (_selection.width != 0 && _selection.height != 0)
                     {
@@ -364,8 +368,8 @@ namespace MSD.EvaFollower
 
                 #region Select Single Kerbal
 
-                bool leftButton = Input.GetMouseButtonDown(_selectMouseButton);
-                bool rightButton = Input.GetMouseButtonDown(_dispatchMouseButton);
+                bool leftButton = Input.GetMouseButtonDown(EvaSettings.selectMouseButton) || Input.GetKeyDown(EvaSettings.selectKeyButton);
+                bool rightButton = Input.GetMouseButtonDown(EvaSettings.dispatchMouseButton) || Input.GetKeyDown(EvaSettings.dispatchKeyButton);
 
                 if (leftButton == false && rightButton == false)
                 {
@@ -382,8 +386,8 @@ namespace MSD.EvaFollower
                 }
 
                 var evaCollision = hitInfo.transform.gameObject.GetComponent<KerbalEVA>();
-                
-                if (Input.GetMouseButtonDown(_selectMouseButton)) //Left button.)
+
+                if (leftButton)
                 {
                     DeselectAllKerbals();
 
@@ -406,7 +410,7 @@ namespace MSD.EvaFollower
                 #endregion
 
                 #region Handle Mouse Controls
-                if (Input.GetMouseButtonDown(_dispatchMouseButton)) //Middle button.
+                if (rightButton) //Middle button.
                 {
 
                     var offset = (FlightGlobals.ActiveVessel).GetWorldPos3D();
@@ -429,6 +433,8 @@ namespace MSD.EvaFollower
                             {
                                 setLine(position, offset);
                             }
+
+                            EvaDebug.DebugLog(string.Format("Target: {0}", position));
 
                             item.Order(position, offset);
                             item.Selected = false;

@@ -9,12 +9,12 @@ namespace MSD.EvaFollower
     {
         public void Start()
         {
-            //EvaDebug.DebugWarning("EvaLogic.Start()");
+            EvaDebug.DebugWarning("EvaLogic.Start()");
             
         }
         public void OnDestroy()
         {
-            //EvaDebug.DebugWarning("EvaLogic.OnDestroy()");
+            EvaDebug.DebugWarning("EvaLogic.OnDestroy()");
         }
 
         public void Update()

@@ -112,12 +112,12 @@ namespace MSD.EvaFollower
             EvaModule module = (EvaModule)eva.GetComponent(typeof(EvaModule));
             module.Load(this);
 
-            //EvaDebug.DebugWarning("EvaContainer.Load("+eva.name+")");
+            EvaDebug.DebugWarning("EvaContainer.Load("+eva.name+")");
         }
 
         public void Unload()
         {
-            //EvaDebug.DebugWarning("EvaContainer.Unload(" + eva.name + ")");
+            EvaDebug.DebugWarning("EvaContainer.Unload(" + eva.name + ")");
             loaded = false;
         }
 
@@ -133,8 +133,8 @@ namespace MSD.EvaFollower
         {
             EvaTokenReader reader = new EvaTokenReader(evaSettings);
 
-            //try
-            //{
+            try
+            {
                 string sflightID = reader.NextTokenEnd(',');
                 string sName = reader.NextTokenEnd(','); 
                 string mode = reader.NextTokenEnd(',');
@@ -146,20 +146,31 @@ namespace MSD.EvaFollower
                 string patrol = reader.NextToken('(', ')'); reader.Consume();
                 string order = reader.NextToken('(', ')');
 
+                this.Name = sName;
                 this.mode = (Mode)Enum.Parse(typeof(Mode), mode);
                 this.status = (Status)Enum.Parse(typeof(Status), status);
                 this.selected = bool.Parse(selected);
                 this.showHelmet = bool.Parse(showHelmet);
-                this.Name = sName;
+                
                            
                 this.formation.FromSave(formation);
                 this.patrol.FromSave(patrol);
                 this.order.FromSave(order);
-            /*}
+
+                EvaDebug.DebugLog("Loaded: " + mode);
+                EvaDebug.DebugLog("name: " + sName);
+                EvaDebug.DebugLog("status: " + status);
+                EvaDebug.DebugLog("selected: " + selected);
+
+                if (this.showHelmet == false)
+                {
+                    eva.ShowHelmet(this.showHelmet);
+                }
+            }
             catch
             {
                 throw new Exception("[EFX] FromSave Failed.");
-            }  */         
+            }        
         }
 
 
