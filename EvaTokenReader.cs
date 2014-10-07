@@ -5,6 +5,9 @@ using System.Text;
 
 namespace MSD.EvaFollower
 {
+    /// <summary>
+    /// Small parser for reading the EvaSetting's data.
+    /// </summary>
     class EvaTokenReader
     {
          int startIndex = -1;
@@ -16,6 +19,9 @@ namespace MSD.EvaFollower
             this.msg = content;
         }
 
+        /// <summary>
+        /// End Of File
+        /// </summary>
         public bool EOF
         {
             get{
@@ -23,11 +29,22 @@ namespace MSD.EvaFollower
             }
         }
 
+        /// <summary>
+        /// Get the next token.
+        /// </summary>
+        /// <param name="beginChar">The character when the token begins</param>
+        /// <param name="endChar">The character at the end of the token.</param>
+        /// <returns></returns>
         public string NextToken(char beginChar, char endChar)
         {
             return NextToken(ref startIndex, beginChar, endChar);
         }
 
+        /// <summary>
+        /// Get the next token
+        /// </summary>
+        /// <param name="endChar">The ending character of the token.</param>
+        /// <returns></returns>
         public string NextTokenEnd(char endChar)
         {
             return NextTokenEnd(ref startIndex, endChar);
