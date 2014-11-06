@@ -363,8 +363,57 @@ namespace MSD.EvaFollower
                             }
                         }
                     }
+
+                    #region targetVesselBySelection
+                    if (EvaSettings.targetVesselBySelection)
+                    {
+                        if (_selection.width != 0 && _selection.height != 0)
+                        {
+                            Vessel target = null;
+                            float longest = 0;
+                            //Scan a targetable vessel is avaible. 
+                            foreach (Vessel vessel in FlightGlobals.Vessels)
+                            {
+                                if (!vessel.loaded)
+                                    return;
+
+                                //Calculate distance.
+                                var distance = Mathf.Abs(Vector3.Distance(vessel.GetWorldPos3D(), camera.transform.position));
+
+                                if (target == null)
+                                {
+                                    longest = distance;
+                                    target = vessel;
+                                }
+                                else
+                                {
+                                    if (distance > longest)
+                                    {
+                                        longest = distance;
+                                        target = vessel;
+                                    }
+                                }
+                            }
+
+                            if (target != null)
+                            {
+                                Vector3 camPos = Camera.main.WorldToScreenPoint(target.transform.position);
+                                camPos.y = InvertY(camPos.y);
+
+                                if (_selection.Contains(camPos))
+                                {
+                                    //target the vessel.  
+                                    FlightGlobals.fetch.SetVesselTarget(target);
+                                }
+                            }
+                        }
+                    }
+
+                    #endregion
                 }
                 #endregion
+
+                              
 
                 #region Select Single Kerbal
 

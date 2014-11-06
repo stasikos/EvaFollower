@@ -9,6 +9,7 @@ namespace MSD.EvaFollower
 {
     class EvaSettings
     {
+        internal static bool targetVesselBySelection = false;
         internal static bool displayDebugLines = false;
 
         //Should be bindable. 
@@ -25,7 +26,6 @@ namespace MSD.EvaFollower
 
         public static void LoadConfiguration()
         {
-            //try{
                 if (FileExcist("Config.cfg"))
                 {
                     KSP.IO.TextReader tr = KSP.IO.TextReader.CreateForType<EvaSettings>("Config.cfg");
@@ -35,23 +35,32 @@ namespace MSD.EvaFollower
                     {
                         string[] parts = line.Split('=');
 
-                        if (parts.Length > 1)
+                        try
                         {
-                            string name = parts[0].Trim();
-                            string value = parts[1].Trim();
-                            
-                            switch (name)
+                            if (parts.Length > 1)
                             {
-                                case "ShowDebugLines": { displayDebugLines = bool.Parse(value); } break;
+                                string name = parts[0].Trim();
+                                string value = parts[1].Trim();
+
+
+                                switch (name)
+                                {
+                                    case "ShowDebugLines": { displayDebugLines = bool.Parse(value); } break;
+                                    case "SelectMouseButton": { selectMouseButton = int.Parse(value); } break;
+                                    case "DispatchMouseButton": { dispatchMouseButton = int.Parse(value); } break;
+                                    case "SelectKey": { selectKeyButton = value; } break;
+                                    case "DispatchKey": { dispatchKeyButton = value; } break;
+                                    case "TargetVesselBySelection": { targetVesselBySelection = bool.Parse(value); } break;
+                                }
                             }
+                        }
+                        catch
+                        {
+                           EvaDebug.DebugWarning("[EFX] Config loading error ");
                         }
                     }
                 }
-            //}
-            //catch
-            //{
-            //    throw new Exception("[EFX] Config loading failed. ");
-            //}
+       
         }
 
         public static void SaveConfiguration()

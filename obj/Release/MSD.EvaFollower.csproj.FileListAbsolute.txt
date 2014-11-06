@@ -1,0 +1,11 @@
+C:\Users\Arcade\Documents\GitHub\EvaFollower\bin\Release\EvaFollower.dll
+C:\Users\Arcade\Documents\GitHub\EvaFollower\bin\Release\EvaFollower.pdb
+C:\Users\Arcade\Documents\GitHub\EvaFollower\bin\Release\Assembly-CSharp.dll
+C:\Users\Arcade\Documents\GitHub\EvaFollower\bin\Release\UnityEngine.dll
+C:\Users\Arcade\Documents\GitHub\EvaFollower\bin\Release\TDx.TDxInput.dll
+C:\Users\Arcade\Documents\GitHub\EvaFollower\bin\Release\Mono.Cecil.dll
+C:\Users\Arcade\Documents\GitHub\EvaFollower\bin\Release\Assembly-CSharp-firstpass.dll
+C:\Users\Arcade\Documents\GitHub\EvaFollower\bin\Release\Mono.Security.dll
+C:\Users\Arcade\Documents\GitHub\EvaFollower\obj\Release\MSD.EvaFollower.csprojResolveAssemblyReference.cache
+C:\Users\Arcade\Documents\GitHub\EvaFollower\obj\Release\EvaFollower.dll
+C:\Users\Arcade\Documents\GitHub\EvaFollower\obj\Release\EvaFollower.pdb
