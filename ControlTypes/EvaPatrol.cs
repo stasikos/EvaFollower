@@ -54,8 +54,8 @@ namespace MSD.EvaFollower
         }
 
         public Vector3d GetNextTarget()
-        {          
-            PatrolAction currentPoint = actions[currentPatrolPoint];        
+        {
+            PatrolAction currentPoint = actions[currentPatrolPoint];
             return Util.GetWorldPos3DLoad(currentPoint.position);
         }
 
@@ -64,7 +64,7 @@ namespace MSD.EvaFollower
             SetReferenceBody();
 
             Vector3d position = Util.GetWorldPos3DSave(vessel);
-            actions.Add(new PatrolAction(PatrolActionType.Move, 0, position));   
+            actions.Add(new PatrolAction(PatrolActionType.Move, 0, position));
 
             if(EvaSettings.displayDebugLines)
                 setLine(position);
@@ -102,8 +102,11 @@ namespace MSD.EvaFollower
                 lineRenderer.SetVertexCount(0);
 
         }
+        public void Hide() {
+            lineRenderer.SetVertexCount(0);
+        }
 
-        
+
         internal string ToSave()
         {
             string actionList = "{";
@@ -122,7 +125,7 @@ namespace MSD.EvaFollower
 
             return string.Format("({0}, {1}, {2}, {3})", args);
         }
-        
+
         internal void FromSave(string patrol)
         {
             try
@@ -163,11 +166,11 @@ namespace MSD.EvaFollower
             catch
             {
                 throw new Exception("[EFX] Patrol.FromSave Failed.");
-            }  
+            }
         }
 
 
-        private void GenerateLine()
+        public void GenerateLine()
         {
             lineRenderer.SetVertexCount(actions.Count+1);
 
@@ -189,8 +192,8 @@ namespace MSD.EvaFollower
 
         public EvaPatrol()
         {
-            if (EvaSettings.displayDebugLines)
-            {
+//            if (EvaSettings.displayDebugLines)
+//            {
                 lineRenderer = new GameObject().AddComponent<LineRenderer>();
 
                 lineRenderer.useWorldSpace = false;
@@ -203,7 +206,7 @@ namespace MSD.EvaFollower
                 lineRenderer.renderer.enabled = true;
 
                 lineRenderer.SetVertexCount(0);
-            }
+//            }
         }
     }
 
@@ -226,10 +229,10 @@ namespace MSD.EvaFollower
             this.delay = delay;
             this.position = position;
         }
-        
+
         internal string ToSave()
         {
-            return "(" + type.ToString() + "," + delay.ToString() + "," + position.ToString() +  ")"; 
+            return "(" + type.ToString() + "," + delay.ToString() + "," + position.ToString() +  ")";
         }
 
         internal void FromSave(string action)
@@ -239,7 +242,7 @@ namespace MSD.EvaFollower
             string sType = reader.NextTokenEnd(',');
             string sDelay = reader.NextTokenEnd(',');
             string sPosition = reader.NextToken('[', ']');
-            
+
             type = (PatrolActionType)Enum.Parse(typeof(PatrolActionType), sType);
             delay = int.Parse(sDelay);
             position = Util.ParseVector3d(sPosition, false);
@@ -257,5 +260,5 @@ namespace MSD.EvaFollower
         Move,
         Wait,
     }
-    
+
 }

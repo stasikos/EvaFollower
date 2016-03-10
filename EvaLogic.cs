@@ -10,7 +10,7 @@ namespace MSD.EvaFollower
         public void Start()
         {
             EvaDebug.DebugWarning("EvaLogic.Start()");
-            
+
         }
         public void OnDestroy()
         {
@@ -22,6 +22,13 @@ namespace MSD.EvaFollower
             if (!FlightGlobals.ready || PauseMenu.isOpen)
                 return;
 
+            // Replace this with a check to see if GUI is hidden
+            if (Input.GetKeyDown(KeyCode.F2) && EvaSettings.displayDebugLinesSetting) {
+                EvaSettings.displayDebugLines = !EvaSettings.displayDebugLines;
+                foreach (EvaContainer container in EvaController.fetch.collection) {
+                    container.togglePatrolLines();
+                }
+            }
 
             try
             {
@@ -40,7 +47,7 @@ namespace MSD.EvaFollower
                         continue;
                     }
 
-                    //Turn the lights on when dark.     
+                    //Turn the lights on when dark.
                     //Skip for now, too buggy..
                     //eva.UpdateLamps();
 
@@ -50,7 +57,7 @@ namespace MSD.EvaFollower
                         continue;
                     }
 
-                    //Recover from ragdoll, if possible.    
+                    //Recover from ragdoll, if possible.
                     if (eva.IsRagDoll)
                     {
                         eva.RecoverFromRagdoll();
@@ -68,7 +75,7 @@ namespace MSD.EvaFollower
 
                     double sqrDist = move.sqrMagnitude;
                     float speed = TimeWarp.deltaTime;
-                    
+
                     if (eva.OnALadder)
                     {
                         eva.ReleaseLadder();
@@ -96,7 +103,7 @@ namespace MSD.EvaFollower
                         if (mode == Mode.None)
                         {
                             //break free!
-                            eva.mode = mode; 
+                            eva.mode = mode;
                             continue;
                         }
                     }
@@ -110,7 +117,7 @@ namespace MSD.EvaFollower
                     //Distance Logic
                     eva.CheckDistance(move, speed, sqrDist);
 
-                    //Reset Animation Mode Events 
+                    //Reset Animation Mode Events
                     eva.CheckModeIsNone();
 
                 }

@@ -1,0 +1,6 @@
+Originally based on the source of Fel (http://forum.kerbalspaceprogram.com/threads/36425-20-2-EVA-Followers-0-12-(Open-to-a-Good-Home))
+Greatly Expanded on by MSD (http://forum.kerbalspaceprogram.com/threads/93653-0-25-EVA-Follower-v1-03-05-Nov-2014)
+Minor patches to restore functionality by Fel
+
+This work is shared under CC BY-NC-SA 3.0 license.
+ Components and included code & content may come under their own license. Please check their documentation or their sites.

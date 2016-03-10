@@ -1,0 +1,19 @@
+Changelog
+
+5/10/2015
+EvaPatrol.cs:		Added "Hide" function
+EvaContainer.cs:	Added "TogglePatrolLines" function
+			Modified CanTakeHelmetOff to check settings for new variable
+EvaSettings.cs:		Added new values
+			displayLoadingKerbals
+			displayToggleHelmet
+			displayDebugLinesSetting
+
+			Tweak to allow toggling the "loading kerbals" thing too.
+EvaLogic.cs:		Used update field to check if F2 is pressed, should be changed to check if GUI is hidden.
+
+5/05/2015
+EvaAddonAddModule.cs:	Added kerbalEVAfemale to attachment thingy
+EvaController.cs:	Corrected changed interface to use "before vessel gets blown up" since we only care if it is an eva.
+
+

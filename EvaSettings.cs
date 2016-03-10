@@ -11,11 +11,14 @@ namespace MSD.EvaFollower
     {
         internal static bool targetVesselBySelection = false;
         internal static bool displayDebugLines = false;
+        internal static bool displayDebugLinesSetting = false;
+        internal static bool displayToggleHelmet = true;
+        internal static bool displayLoadingKerbals = true;
 
-        //Should be bindable. 
+        //Should be bindable.
         internal static int selectMouseButton = 0;
         internal static int dispatchMouseButton = 2;
-        
+
         internal static string selectKeyButton = "o";
         internal static string dispatchKeyButton = "p";
 
@@ -45,7 +48,9 @@ namespace MSD.EvaFollower
 
                                 switch (name)
                                 {
-                                    case "ShowDebugLines": { displayDebugLines = bool.Parse(value); } break;
+                                    case "ShowDebugLines": { displayDebugLinesSetting = bool.Parse(value); } break;
+                                    case "ShowLoadingKerbals": { displayLoadingKerbals = bool.Parse(value); } break;
+                                    case "EnableHelmetToggle": { displayToggleHelmet = bool.Parse(value); } break;
                                     case "SelectMouseButton": { selectMouseButton = int.Parse(value); } break;
                                     case "DispatchMouseButton": { dispatchMouseButton = int.Parse(value); } break;
                                     case "SelectKey": { selectKeyButton = value; } break;
@@ -59,8 +64,9 @@ namespace MSD.EvaFollower
                            EvaDebug.DebugWarning("[EFX] Config loading error ");
                         }
                     }
+                    displayDebugLines = displayDebugLinesSetting;
                 }
-       
+
         }
 
         public static void SaveConfiguration()
@@ -74,6 +80,9 @@ namespace MSD.EvaFollower
             tr.Write("# use lower case or eat exception sandwich. ");
             tr.Write("SelectKey = o");
             tr.Write("DispatchKey = p");
+            tr.Write("");
+            tr.Write("ShowLoadingKerbals = false");
+            tr.Write("EnableHelmetToggle = true");
             tr.Close();
 
         }
@@ -86,8 +95,8 @@ namespace MSD.EvaFollower
         public static void Load()
         {
             EvaDebug.DebugWarning("OnLoad()");
-            ScreenMessages.PostScreenMessage("Loading Kerbals...", 3, ScreenMessageStyle.LOWER_CENTER);
-            
+            if (displayLoadingKerbals) ScreenMessages.PostScreenMessage("Loading Kerbals...", 3, ScreenMessageStyle.LOWER_CENTER);
+
             LoadFunction();
         }
 
@@ -98,14 +107,14 @@ namespace MSD.EvaFollower
             EvaDebug.ProfileEnd("EvaSettings.Load()");
             isLoaded = true;
         }
-        
+
         public static void Save()
         {
             if (isLoaded)
             {
                 EvaDebug.DebugWarning("OnSave()");
-                ScreenMessages.PostScreenMessage("Saving Kerbals...", 3, ScreenMessageStyle.LOWER_CENTER);
-                
+                if (displayLoadingKerbals) ScreenMessages.PostScreenMessage("Saving Kerbals...", 3, ScreenMessageStyle.LOWER_CENTER);
+
                 SaveFunction();
 
                 isLoaded = false;
@@ -125,7 +134,7 @@ namespace MSD.EvaFollower
             EvaDebug.DebugWarning("EvaSettings.LoadEva(" + container.Name + ")");
 
             //The eva was already has a old save.
-            //Load it. 
+            //Load it.
             if (collection.ContainsKey(container.flightID))
             {
                 //string evaString = collection[container.flightID];
@@ -135,7 +144,7 @@ namespace MSD.EvaFollower
             }
             else
             {
-                //No save yet.                
+                //No save yet.
             }
         }
         public static void SaveEva(EvaContainer container){
@@ -193,7 +202,7 @@ namespace MSD.EvaFollower
             Guid flightID = GetFlightIDFromEvaString(eva);
             collection.Add(flightID, eva);
         }
-    
+
 
         private static Guid GetFlightIDFromEvaString(string evaString)
         {
@@ -205,20 +214,20 @@ namespace MSD.EvaFollower
             Guid flightID = new Guid(sflightID);
             return flightID;
         }
-   
+
 
         private static void SaveFile()
-        {  
+        {
             KSP.IO.TextWriter tw = KSP.IO.TextWriter.CreateForType<EvaSettings>(String.Format("Evas-{0}.txt", HighLogic.CurrentGame.Title));
-            
+
             foreach (var item in collection)
             {
                 tw.Write("[" + item.Value + "]");
             }
-            
+
             tw.Close();
 
             collection.Clear();
-        }              
+        }
     }
 }

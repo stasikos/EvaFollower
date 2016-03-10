@@ -23,7 +23,8 @@ namespace MSD.EvaFollower
             
             GameEvents.onCrewOnEva.Add(OnCrewOnEva);
             GameEvents.onCrewBoardVessel.Add(OnCrewBoardVessel);
-            GameEvents.onCrewKilled.Add(OnCrewKilled);
+//            GameEvents.onCrewKilled.Add(OnCrewKilled);
+            GameEvents.onVesselWillDestroy.Add(VesselDest);
 
             GameEvents.onGameStateSave.Add(OnSave);
             GameEvents.onFlightReady.Add(onFlightReadyCallback);
@@ -39,7 +40,8 @@ namespace MSD.EvaFollower
         
             GameEvents.onCrewOnEva.Remove(OnCrewOnEva);
             GameEvents.onCrewBoardVessel.Remove(OnCrewBoardVessel);
-            GameEvents.onCrewKilled.Remove(OnCrewKilled);
+//            GameEvents.onCrewKilled.Remove(OnCrewKilled);
+            GameEvents.onVesselWillDestroy.Add(VesselDest);
 
             GameEvents.onGameStateSave.Remove(OnSave);
             GameEvents.onFlightReady.Remove(onFlightReadyCallback);
@@ -115,10 +117,20 @@ namespace MSD.EvaFollower
         /// Runs when the EVA is killed.
         /// </summary>
         /// <param name="report"></param>
+/*
         public void OnCrewKilled(EventReport report)
         {
             EvaDebug.DebugLog("OnCrewKilled()");
-            Unload(report.origin.vessel, true);
+		KerbalRoster boboo = new KerbalRoster(Game.Modes.SANDBOX);	
+		print(boboo[report.sender].name);
+		//MonoBehaviour.print(report.origin);
+		//MonoBehaviour.print(report.origin.vessel);
+            //Unload(report.origin.vessel, true);
+        }
+*/
+        public void VesselDest(Vessel report) {
+            EvaDebug.DebugLog("VesselDest()");
+		if (report.isEVA) Unload(report, true);
         }
 
         public void Load(Vessel vessel)

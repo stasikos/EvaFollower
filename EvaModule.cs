@@ -5,11 +5,11 @@ using System.Text;
 namespace MSD.EvaFollower
 {
     /// <summary>
-    /// Keep track of the Context Menu. 
+    /// Keep track of the Context Menu.
     /// </summary>
     class EvaModule : PartModule
     {
-        private EvaContainer currentContainer;   
+        private EvaContainer currentContainer;
 
         public void Update()
         {
@@ -18,10 +18,10 @@ namespace MSD.EvaFollower
 
             if (currentContainer == null)
                 return;
-            
+
                 ResetEvents();
                 SetEvents();
-            
+
         }
 
         public void Load(EvaContainer current)
@@ -106,11 +106,11 @@ namespace MSD.EvaFollower
                 {
                     Events["SetPoint"].active = false;
                     Events["Wait"].active = false;
-                }  
+                }
             }
         }
 
-  
+
         [KSPEvent(guiActive = true, guiName = "Follow Me", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
         public void Follow()
         {
@@ -126,7 +126,7 @@ namespace MSD.EvaFollower
         [KSPEvent(guiActive = true, guiName = "Add Waypoint", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
         public void SetPoint()
         {
-                currentContainer.SetWaypoint();                     
+                currentContainer.SetWaypoint();
         }
 
         [KSPEvent(guiActive = true, guiName = "Wait", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
@@ -147,8 +147,8 @@ namespace MSD.EvaFollower
             currentContainer.EndPatrol();
 
         }
-           
-        [KSPEvent(guiActive = true, guiName = "Walk", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]  
+
+        [KSPEvent(guiActive = true, guiName = "Walk", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
         public void PatrolWalk()
         {
             currentContainer.SetWalkPatrolMode();
@@ -181,7 +181,7 @@ namespace MSD.EvaFollower
 
             currentContainer.EVA.headLamp.light.intensity += 100;
         }
-        
+
 
         [KSPEvent(guiActive = true, guiName = "Save", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
         public void ClearSave()

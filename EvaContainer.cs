@@ -6,20 +6,26 @@ namespace MSD.EvaFollower
 {
     class EvaContainer
     {
-        public Guid flightID; 
+        public Guid flightID;
         public Mode mode = Mode.None;
         public Status status = Status.None;
 
         private bool selected = false;
         private bool loaded = false;
         private bool showHelmet = true;
-        
+
         private KerbalEVA eva;
 
         internal EvaFormation formation = new EvaFormation();
         internal EvaPatrol patrol = new EvaPatrol();
         internal EvaOrder order = new EvaOrder();
-           
+
+        public void togglePatrolLines() {
+           if (EvaSettings.displayDebugLines) {
+			patrol.GenerateLine();
+		}else patrol.Hide();
+        }
+
         public bool IsActive
         {
             get { return (eva.vessel == FlightGlobals.ActiveVessel); }
@@ -29,7 +35,6 @@ namespace MSD.EvaFollower
         {
             get { return eva.isRagdoll; }
         }
-
         public bool AllowPatrol
         {
             get { return (patrol.actions.Count >= 1);  }
@@ -54,7 +59,7 @@ namespace MSD.EvaFollower
 
         public bool CanTakeHelmetOff
         {
-            get { return FlightGlobals.ActiveVessel.mainBody.bodyName == "Kerbin"; }
+            get { return (FlightGlobals.ActiveVessel.mainBody.bodyName == "Kerbin") && EvaSettings.displayToggleHelmet; }
         }
 
         public KerbalEVA EVA
@@ -67,7 +72,7 @@ namespace MSD.EvaFollower
             get { return selected; }
             set { selected = value; }
         }
-                
+
         /// <summary>
         /// Get the world position of the kerbal.
         /// </summary>
@@ -136,7 +141,7 @@ namespace MSD.EvaFollower
             try
             {
                 string sflightID = reader.NextTokenEnd(',');
-                string sName = reader.NextTokenEnd(','); 
+                string sName = reader.NextTokenEnd(',');
                 string mode = reader.NextTokenEnd(',');
                 string status = reader.NextTokenEnd(',');
                 string selected = reader.NextTokenEnd(',');
@@ -151,8 +156,8 @@ namespace MSD.EvaFollower
                 this.status = (Status)Enum.Parse(typeof(Status), status);
                 this.selected = bool.Parse(selected);
                 this.showHelmet = bool.Parse(showHelmet);
-                
-                           
+
+
                 this.formation.FromSave(formation);
                 this.patrol.FromSave(patrol);
                 this.order.FromSave(order);
@@ -170,7 +175,7 @@ namespace MSD.EvaFollower
             catch
             {
                 throw new Exception("[EFX] FromSave Failed.");
-            }        
+            }
         }
 
 
@@ -178,7 +183,7 @@ namespace MSD.EvaFollower
         {
             Guid flightID = (FlightGlobals.fetch.activeVessel).id;
             EvaContainer leader = EvaController.fetch.GetEva(flightID);
-                        
+
             selected = false;
             mode = Mode.Follow;
             formation.SetLeader(leader);
@@ -362,7 +367,7 @@ namespace MSD.EvaFollower
             //speed values
             move *= speed;
 
-            //rotate            
+            //rotate
             if (move != Vector3d.zero)
             {
                 if (eva.JetpackDeployed)
@@ -378,7 +383,7 @@ namespace MSD.EvaFollower
 
                     eva.part.vessel.SetRotation(result);
 
-                    //move   
+                    //move
                     eva.rigidbody.MovePosition(eva.rigidbody.position + move);
                 }
             }
@@ -391,7 +396,7 @@ namespace MSD.EvaFollower
             if(mode == Mode.None)
                 eva.Animate(AnimationState.Idle);
         }
-        
+
         internal void Order(Vector3d position, Vector3d vector3d)
         {
             order.Move(position, vector3d);
@@ -399,6 +404,6 @@ namespace MSD.EvaFollower
 
 
 
-  
+
     }
 }
