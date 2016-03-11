@@ -63,7 +63,7 @@ namespace MSD.EvaFollower
         }
 
         
-        internal string ToSave()
+        public string ToSave()
         {
             string leaderID = "null";
             if(leader != null)
@@ -73,7 +73,7 @@ namespace MSD.EvaFollower
             return "(Leader:" + leaderID + ")";
         }
 
-        internal void FromSave(string formation)
+		public void FromSave(string formation)
         {
             try
             {
@@ -83,7 +83,7 @@ namespace MSD.EvaFollower
                 if (formation != "null")
                 {
                     Guid flightID = new Guid(formation);
-                    EvaContainer container = EvaController.fetch.GetEva(flightID);
+                    EvaContainer container = EvaController.instance.GetEva(flightID);
 
                     if (container != null)
                     {

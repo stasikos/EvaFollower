@@ -25,12 +25,15 @@ namespace MSD.EvaFollower
              if (HighLogic.LoadedScene == GameScenes.FLIGHT)
              {
                  if (style == null)
-                 {
-                     pos = new Rect(Screen.width - 80, 60, 50, 60);
+                 {	
+					var w = 600;
+					var h = 250;
 
-                     style = new GUIStyle(GUI.skin.label);
-                     style.alignment = TextAnchor.UpperRight;
-                     style.normal.textColor = new Color(0.8f, 0.8f, 0.8f, 0.6f);
+					pos = new Rect(Screen.width - (20+w), 60, w, h);
+
+	                style = new GUIStyle(GUI.skin.label);
+	                style.alignment = TextAnchor.UpperRight;
+	                style.normal.textColor = new Color(0.8f, 0.8f, 0.8f, 0.6f);
                  }
 
                  GUI.Label(pos, content, style);
@@ -41,7 +44,8 @@ namespace MSD.EvaFollower
          {
              if (HighLogic.LoadedScene == GameScenes.FLIGHT)
              {
-                 content = "Active Kerbals: " + EvaController.fetch.collection.Count;
+				content = "Active Kerbals: " + EvaController.instance.collection.Count;
+				content += Environment.NewLine + EvaController.instance.debug;
              }
              else
              {

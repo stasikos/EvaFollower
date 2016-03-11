@@ -25,14 +25,20 @@ namespace MSD.EvaFollower
             // Replace this with a check to see if GUI is hidden
             if (Input.GetKeyDown(KeyCode.F2) && EvaSettings.displayDebugLinesSetting) {
                 EvaSettings.displayDebugLines = !EvaSettings.displayDebugLines;
-                foreach (EvaContainer container in EvaController.fetch.collection) {
+                foreach (EvaContainer container in EvaController.instance.collection) {
                     container.togglePatrolLines();
                 }
             }
 
+			if (Input.GetKeyDown (KeyCode.B)) {
+				foreach (EvaContainer container in EvaController.instance.collection) {
+					container.EVA.PackToggle ();
+				}
+			}
+
             try
             {
-                foreach (EvaContainer eva in EvaController.fetch.collection.ToArray())
+                foreach (EvaContainer eva in EvaController.instance.collection.ToArray())
                 {
                     if (eva == null)
                     {

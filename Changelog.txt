@@ -16,4 +16,7 @@ EvaLogic.cs:		Used update field to check if F2 is pressed, should be changed to 
 EvaAddonAddModule.cs:	Added kerbalEVAfemale to attachment thingy
 EvaController.cs:	Corrected changed interface to use "before vessel gets blown up" since we only care if it is an eva.
 
-
+11/03/2016
+EvaOrderController.cs: Removed restriction to drag from top left to bottom right.
+		       Hide debug lines as default
+		       Increased walking speed, so they can keep up. (Still not the correct 			       implementation based on gravity)

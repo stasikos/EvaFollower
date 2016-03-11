@@ -40,23 +40,23 @@ namespace MSD.EvaFollower
             return Position + ": offset(" + Offset + ")";
         }
 
-        internal string ToSave()
+		public string ToSave()
         {
             return "(" + AllowRunning.ToString() + "," + Position + "," + Offset + ")";
         }
 
-        internal void FromSave(string order)
+		public void FromSave(string order)
         {
-                //EvaDebug.DebugWarning("Order.FromSave()");
-                EvaTokenReader reader = new EvaTokenReader(order);
+            //EvaDebug.DebugWarning("Order.FromSave()");
+            EvaTokenReader reader = new EvaTokenReader(order);
 
-                string sAllowRunning = reader.NextTokenEnd(',');
-                string sPosition = reader.NextToken('[', ']'); reader.Consume(); // , 
-                string sOffset = reader.NextToken('[', ']');
+            string sAllowRunning = reader.NextTokenEnd(',');
+            string sPosition = reader.NextToken('[', ']'); reader.Consume(); // , 
+            string sOffset = reader.NextToken('[', ']');
 
-                AllowRunning = bool.Parse(sAllowRunning);
-                Position = Util.ParseVector3d(sPosition, false);
-                Offset = Util.ParseVector3d(sOffset, false);                        
+            AllowRunning = bool.Parse(sAllowRunning);
+            Position = Util.ParseVector3d(sPosition, false);
+            Offset = Util.ParseVector3d(sOffset, false);                        
         }
     }
 }

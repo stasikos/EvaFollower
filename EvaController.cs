@@ -8,7 +8,8 @@ namespace MSD.EvaFollower
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     class EvaController : MonoBehaviour
     {
-        public static EvaController fetch;
+        public static EvaController instance;
+		public string debug = "";
         public List<EvaContainer> collection = new List<EvaContainer>();
         
         public void Start()
@@ -16,7 +17,7 @@ namespace MSD.EvaFollower
 
             EvaDebug.DebugWarning("EvaController.Start()");
             //initialize the singleton.
-            fetch = this;
+            instance = this;
                      
             GameEvents.onPartPack.Add(OnPartPack);
             GameEvents.onPartUnpack.Add(OnPartUnpack);

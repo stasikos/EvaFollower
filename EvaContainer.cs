@@ -18,12 +18,18 @@ namespace MSD.EvaFollower
 
         internal EvaFormation formation = new EvaFormation();
         internal EvaPatrol patrol = new EvaPatrol();
-        internal EvaOrder order = new EvaOrder();
+		internal EvaOrder order = new EvaOrder();
+		internal EvaWanderer wanderer = new EvaWanderer();
+
+		const float RunMultiplier = 1.75f;
+		const float BoundSpeedMultiplier = 1.25f;
 
         public void togglePatrolLines() {
-           if (EvaSettings.displayDebugLines) {
-			patrol.GenerateLine();
-		}else patrol.Hide();
+			if (EvaSettings.displayDebugLines) {
+				patrol.GenerateLine ();
+			} else {
+				patrol.Hide ();
+			}
         }
 
         public bool IsActive
@@ -35,6 +41,7 @@ namespace MSD.EvaFollower
         {
             get { return eva.isRagdoll; }
         }
+
         public bool AllowPatrol
         {
             get { return (patrol.actions.Count >= 1);  }
@@ -86,8 +93,9 @@ namespace MSD.EvaFollower
             get {
                 bool isLoaded = loaded;
 
-                if (loaded)
-                    isLoaded |= eva.isEnabled;
+				if (loaded) {
+					isLoaded |= eva.isEnabled;
+				}
 
                 return isLoaded;
             }
@@ -131,7 +139,9 @@ namespace MSD.EvaFollower
             return (flightID + "," + Name + "," + mode + "," + status + "," + selected + "," + showHelmet + ","
                 + this.formation.ToSave() + ","
                 + this.patrol.ToSave() + ","
-                + this.order.ToSave());
+				+ this.order.ToSave()  + ","
+				+ this.wanderer.ToSave()			
+			);
         }
 
         internal void FromSave(string evaSettings)
@@ -149,7 +159,8 @@ namespace MSD.EvaFollower
 
                 string formation = reader.NextToken('(', ')'); reader.Consume();
                 string patrol = reader.NextToken('(', ')'); reader.Consume();
-                string order = reader.NextToken('(', ')');
+				string order = reader.NextToken('(', ')'); reader.Consume();
+				string wanderer = reader.NextToken('(', ')');
 
                 this.Name = sName;
                 this.mode = (Mode)Enum.Parse(typeof(Mode), mode);
@@ -161,6 +172,7 @@ namespace MSD.EvaFollower
                 this.formation.FromSave(formation);
                 this.patrol.FromSave(patrol);
                 this.order.FromSave(order);
+				this.wanderer.FromSave(wanderer);
 
                 EvaDebug.DebugLog("Loaded: " + mode);
                 EvaDebug.DebugLog("name: " + sName);
@@ -182,7 +194,7 @@ namespace MSD.EvaFollower
         internal void Follow()
         {
             Guid flightID = (FlightGlobals.fetch.activeVessel).id;
-            EvaContainer leader = EvaController.fetch.GetEva(flightID);
+            EvaContainer leader = EvaController.instance.GetEva(flightID);
 
             selected = false;
             mode = Mode.Follow;
@@ -226,6 +238,12 @@ namespace MSD.EvaFollower
             patrol.AllowRunning = false;
         }
 
+		internal void StartWanderer()
+		{
+			mode = Mode.Wander;
+			wanderer.SetEva (eva);
+		}
+
         internal void ToggleHelmet()
         {
             this.showHelmet = !showHelmet;
@@ -241,12 +259,9 @@ namespace MSD.EvaFollower
                 eva.TurnLamp(lampOn);
             }
 
-            if (IsActive)
-            {
-                if (!showHelmet && eva.lampOn)
-                {
-                    eva.TurnLamp(false);
-                }
+			if (IsActive && !showHelmet && eva.lampOn)
+            {               
+               eva.TurnLamp(false);
             }
         }
 
@@ -259,7 +274,13 @@ namespace MSD.EvaFollower
         {
             if (mode == Mode.Follow)
             {
-                return formation.GetNextTarget();
+				var target = formation.GetNextTarget();
+
+				if (target == Vector2d.zero) {
+					mode = Mode.None;
+				}
+
+				return target;
             }
             else if (mode == Mode.Patrol)
             {
@@ -269,6 +290,10 @@ namespace MSD.EvaFollower
             {
                 return order.GetNextTarget();
             }
+			else if (mode == Mode.Wander)
+			{
+				return wanderer.GetNextTarget();
+			}
 
             //Error
             throw new Exception("[EFX] New Mode Introduced");
@@ -281,7 +306,6 @@ namespace MSD.EvaFollower
 
         internal void UpdateAnimations(double sqrDist, ref float speed)
         {
-
             double geeForce = FlightGlobals.currentMainBody.GeeASL;
 
             if (eva.part.WaterContact)
@@ -296,14 +320,17 @@ namespace MSD.EvaFollower
             }
             else if (geeForce >= eva.minRunningGee)//sqrDist > 5f &&
             {
-                if (AllowRunning)
+				if (AllowRunning) {
+					speed *= eva.runSpeed;
+					eva.Animate (AnimationState.Run);
+				} 
+				else if (sqrDist > 4 && mode == Mode.Follow) {
+					speed *= eva.runSpeed * RunMultiplier;
+					eva.Animate(AnimationState.Run);
+				}
+                else if (sqrDist > 8f && mode == Mode.Follow)
                 {
-                    speed *= eva.runSpeed;
-                    eva.Animate(AnimationState.Run);
-                }
-                else if (sqrDist > 5f && mode == Mode.Follow)
-                {
-                    speed *= eva.runSpeed;
+					speed *= eva.runSpeed * RunMultiplier;
                     eva.Animate(AnimationState.Run);
                 }
                 else
@@ -319,7 +346,7 @@ namespace MSD.EvaFollower
             }
             else
             {
-                speed *= eva.boundSpeed * 1.25f; //speedup
+				speed *= eva.boundSpeed * BoundSpeedMultiplier; //speedup
                 eva.Animate(AnimationState.BoundSpeed);
             }
 
@@ -331,7 +358,8 @@ namespace MSD.EvaFollower
 
             if (mode == Mode.Follow){       controlType = formation;    }
             else if (mode == Mode.Patrol){  controlType = patrol;       }
-            else if (mode == Mode.Order){   controlType = order;        }
+			else if (mode == Mode.Order){   controlType = order;        }
+			else if (mode == Mode.Wander){   controlType = wanderer;    }
 
             if (controlType.CheckDistance(sqrDist))
             {

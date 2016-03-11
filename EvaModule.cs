@@ -42,7 +42,8 @@ namespace MSD.EvaFollower
             Events["EndPatrol"].active = false;
             Events["PatrolRun"].active = false;
             Events["PatrolWalk"].active = false;
-            Events["ToggleHelmet"].active = false;
+			Events["ToggleHelmet"].active = false;
+			Events["StartWanderer"].active = false;
         }
 
         /// <summary>
@@ -57,6 +58,7 @@ namespace MSD.EvaFollower
             {
                 Events["Follow"].active = true;
                 Events["Stay"].active = false;
+				//Events["StartWanderer"].active = true;
             }
             else if (currentContainer.mode == Mode.Follow)
             {
@@ -145,7 +147,6 @@ namespace MSD.EvaFollower
         public void EndPatrol()
         {
             currentContainer.EndPatrol();
-
         }
 
         [KSPEvent(guiActive = true, guiName = "Walk", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
@@ -163,8 +164,14 @@ namespace MSD.EvaFollower
         [KSPEvent(guiActive = true, guiName = "Toggle Helmet", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
         public void ToggleHelmet()
         {
-                currentContainer.ToggleHelmet();
+            currentContainer.ToggleHelmet();
         }
+
+		[KSPEvent(guiActive = true, guiName = "Wander", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]
+		public void StartWanderer()
+		{
+			currentContainer.StartWanderer();
+		}
 
         /*
         [KSPEvent(guiActive = true, guiName = "Debug", active = true, guiActiveUnfocused = true, unfocusedRange = 8)]

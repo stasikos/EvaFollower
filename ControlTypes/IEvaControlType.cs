@@ -18,5 +18,8 @@ namespace MSD.EvaFollower
         /// </summary>
         /// <param name="move"></param>
         Vector3d GetNextTarget();
+
+		string ToSave ();
+		void FromSave (string action);
     }
 }

@@ -262,7 +262,7 @@ namespace MSD.EvaFollower
                 angle += 0.1;
 
                 #region Update selected kerbals
-                foreach (EvaContainer eva in EvaController.fetch.collection)
+                foreach (EvaContainer eva in EvaController.instance.collection)
                 {
                     if (!eva.Loaded)
                         continue;
@@ -325,6 +325,9 @@ namespace MSD.EvaFollower
                         _selection.height = -_selection.height;
                     }
 
+
+					EvaController.instance.debug = _selection.ToString();
+
                     _startClick = -Vector3.one;
                 }
 
@@ -340,8 +343,20 @@ namespace MSD.EvaFollower
                 {
                     if (_selection.width != 0 && _selection.height != 0)
                     {
+						Rect _temp = new Rect(_selection.x, _selection.y, _selection.width, _selection.height);
+						if (_temp.width < 0)
+						{
+							_temp.x += _temp.width;
+							_temp.width = -_temp.width;
+						}
+						if (_selection.height < 0)
+						{
+							_temp.y += _temp.height;
+							_temp.height = -_temp.height;
+						}
+
                         //get the kerbals in the selection.
-                        foreach (EvaContainer container in EvaController.fetch.collection)
+                        foreach (EvaContainer container in EvaController.instance.collection)
                         {                            
                             if (!container.Loaded)
                             {
@@ -352,7 +367,7 @@ namespace MSD.EvaFollower
                             Vector3 camPos = Camera.main.WorldToScreenPoint(container.EVA.transform.position);
                             camPos.y = InvertY(camPos.y);
 
-                            if (_selection.Contains(camPos))
+							if (_temp.Contains(camPos))
                             {
                                 SelectEva(container);
                             }
@@ -442,7 +457,7 @@ namespace MSD.EvaFollower
 
                     if (evaCollision != null)
                     {
-                        EvaContainer eva = EvaController.fetch.GetEva(evaCollision.vessel.id);
+                        EvaContainer eva = EvaController.instance.GetEva(evaCollision.vessel.id);
 
                         if (!eva.Loaded)
                         {
@@ -465,7 +480,7 @@ namespace MSD.EvaFollower
                     var offset = (FlightGlobals.ActiveVessel).GetWorldPos3D();
                     var position = (Vector3d)hitInfo.point;
 
-                    foreach (var item in EvaController.fetch.collection.ToArray())
+                    foreach (var item in EvaController.instance.collection.ToArray())
                     {
                         if (!item.Loaded)
                             return;
@@ -520,7 +535,7 @@ namespace MSD.EvaFollower
         private void DeselectAllKerbals()
         {
             //deselect all kerbals.
-            foreach (EvaContainer eva in EvaController.fetch.collection)
+            foreach (EvaContainer eva in EvaController.instance.collection)
             {
                 if (!eva.Loaded)
                     continue;

@@ -107,7 +107,7 @@ namespace MSD.EvaFollower
         }
 
 
-        internal string ToSave()
+		public string ToSave()
         {
             string actionList = "{";
             for (int i = 0; i < actions.Count; i++)
@@ -126,7 +126,7 @@ namespace MSD.EvaFollower
             return string.Format("({0}, {1}, {2}, {3})", args);
         }
 
-        internal void FromSave(string patrol)
+		public void FromSave(string patrol)
         {
             try
             {

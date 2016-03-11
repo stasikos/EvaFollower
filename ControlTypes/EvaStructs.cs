@@ -15,7 +15,8 @@ namespace MSD.EvaFollower
         Follow = 2,
         Patrol = 3,
         Leader = 4,
-        Order = 5
+        Order = 5,
+		Wander = 6
     }
 
     /// <summary>

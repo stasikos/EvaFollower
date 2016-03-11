@@ -15,7 +15,6 @@ namespace MSD.EvaFollower
         internal static bool displayToggleHelmet = true;
         internal static bool displayLoadingKerbals = true;
 
-        //Should be bindable.
         internal static int selectMouseButton = 0;
         internal static int dispatchMouseButton = 2;
 
@@ -29,44 +28,42 @@ namespace MSD.EvaFollower
 
         public static void LoadConfiguration()
         {
-                if (FileExcist("Config.cfg"))
+            if (FileExcist("Config.cfg"))
+            {
+                KSP.IO.TextReader tr = KSP.IO.TextReader.CreateForType<EvaSettings>("Config.cfg");
+                string[] lines = tr.ReadToEnd().Split('\n');
+
+                foreach (var line in lines)
                 {
-                    KSP.IO.TextReader tr = KSP.IO.TextReader.CreateForType<EvaSettings>("Config.cfg");
-                    string[] lines = tr.ReadToEnd().Split('\n');
+                    string[] parts = line.Split('=');
 
-                    foreach (var line in lines)
+                    try
                     {
-                        string[] parts = line.Split('=');
-
-                        try
+                        if (parts.Length > 1)
                         {
-                            if (parts.Length > 1)
+                            string name = parts[0].Trim();
+                            string value = parts[1].Trim();
+
+                            switch (name)
                             {
-                                string name = parts[0].Trim();
-                                string value = parts[1].Trim();
-
-
-                                switch (name)
-                                {
-                                    case "ShowDebugLines": { displayDebugLinesSetting = bool.Parse(value); } break;
-                                    case "ShowLoadingKerbals": { displayLoadingKerbals = bool.Parse(value); } break;
-                                    case "EnableHelmetToggle": { displayToggleHelmet = bool.Parse(value); } break;
-                                    case "SelectMouseButton": { selectMouseButton = int.Parse(value); } break;
-                                    case "DispatchMouseButton": { dispatchMouseButton = int.Parse(value); } break;
-                                    case "SelectKey": { selectKeyButton = value; } break;
-                                    case "DispatchKey": { dispatchKeyButton = value; } break;
-                                    case "TargetVesselBySelection": { targetVesselBySelection = bool.Parse(value); } break;
-                                }
+                                case "ShowDebugLines": { displayDebugLinesSetting = bool.Parse(value); } break;
+                                case "ShowLoadingKerbals": { displayLoadingKerbals = bool.Parse(value); } break;
+                                case "EnableHelmetToggle": { displayToggleHelmet = bool.Parse(value); } break;
+                                case "SelectMouseButton": { selectMouseButton = int.Parse(value); } break;
+                                case "DispatchMouseButton": { dispatchMouseButton = int.Parse(value); } break;
+                                case "SelectKey": { selectKeyButton = value; } break;
+                                case "DispatchKey": { dispatchKeyButton = value; } break;
+                                case "TargetVesselBySelection": { targetVesselBySelection = bool.Parse(value); } break;
                             }
                         }
-                        catch
-                        {
-                           EvaDebug.DebugWarning("[EFX] Config loading error ");
-                        }
                     }
-                    displayDebugLines = displayDebugLinesSetting;
+                    catch
+                    {
+                       EvaDebug.DebugWarning("[EFX] Config loading error ");
+                    }
                 }
-
+                displayDebugLines = displayDebugLinesSetting;
+            }
         }
 
         public static void SaveConfiguration()
@@ -95,7 +92,9 @@ namespace MSD.EvaFollower
         public static void Load()
         {
             EvaDebug.DebugWarning("OnLoad()");
-            if (displayLoadingKerbals) ScreenMessages.PostScreenMessage("Loading Kerbals...", 3, ScreenMessageStyle.LOWER_CENTER);
+			if (displayLoadingKerbals) {
+				ScreenMessages.PostScreenMessage ("Loading Kerbals...", 3, ScreenMessageStyle.LOWER_CENTER);
+			}
 
             LoadFunction();
         }
@@ -113,7 +112,10 @@ namespace MSD.EvaFollower
             if (isLoaded)
             {
                 EvaDebug.DebugWarning("OnSave()");
-                if (displayLoadingKerbals) ScreenMessages.PostScreenMessage("Saving Kerbals...", 3, ScreenMessageStyle.LOWER_CENTER);
+
+				if (displayLoadingKerbals) {
+					ScreenMessages.PostScreenMessage ("Saving Kerbals...", 3, ScreenMessageStyle.LOWER_CENTER);
+				}
 
                 SaveFunction();
 
