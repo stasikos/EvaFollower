@@ -127,8 +127,12 @@ namespace MSD.EvaFollower
 
         public static void RecoverFromRagdoll(this KerbalEVA eva)
         {
-            if (eva.rigidbody.isKinematic)
-                return;
+			Rigidbody rigidbody = null;
+			eva.GetComponentCached<Rigidbody> (ref rigidbody);
+			if (rigidbody != null) {
+				if (rigidbody.isKinematic)
+					return;
+			}
 
             if (!eva.isEnabled)
                 return;
@@ -171,8 +175,13 @@ namespace MSD.EvaFollower
                     } break;
             }
 
-            eva.animation.CrossFade(anim);
-        }
+			Animation _animation = null;
+			eva.GetComponentCached<Animation> (ref _animation);
+			if (_animation != null) 
+			{
+				_animation.CrossFade (anim);
+			}
+		}
 
         /// <summary>
         /// Toggle the light of the current kerbal.

@@ -42,6 +42,12 @@
     <Reference Include="UnityEngine">
       <HintPath>..\..\..\..\Applications\KSP_linux\KSP_Data\Managed\UnityEngine.dll</HintPath>
     </Reference>
+    <Reference Include="KSPUtil">
+      <HintPath>..\..\..\..\Applications\KSP_linux\KSP_Data\Managed\KSPUtil.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>..\..\..\..\Applications\KSP_linux\KSP_Data\Managed\UnityEngine.UI.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EvaContainer.cs" />

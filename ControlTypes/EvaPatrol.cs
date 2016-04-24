@@ -192,8 +192,8 @@ namespace MSD.EvaFollower
 
         public EvaPatrol()
         {
-//            if (EvaSettings.displayDebugLines)
-//            {
+            if (EvaSettings.displayDebugLines)
+            {
                 lineRenderer = new GameObject().AddComponent<LineRenderer>();
 
                 lineRenderer.useWorldSpace = false;
@@ -201,12 +201,16 @@ namespace MSD.EvaFollower
                 lineRenderer.SetWidth(0.05f, 0.05f);
                 lineRenderer.SetColors(Color.green, Color.red);
 
-                lineRenderer.renderer.castShadows = false;
-                lineRenderer.renderer.receiveShadows = false;
-                lineRenderer.renderer.enabled = true;
+				Renderer _renderer = null;
+				lineRenderer.GetComponentCached<Renderer> (ref _renderer);
 
+				if (_renderer != null) {
+					_renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+					_renderer.receiveShadows = false;
+					_renderer.enabled = true;
+				}
                 lineRenderer.SetVertexCount(0);
-//            }
+            }
         }
     }
 

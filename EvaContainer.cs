@@ -381,7 +381,9 @@ namespace MSD.EvaFollower
 
         private bool AbleToMove()
         {
-            return (!eva.isEnabled) | (!eva.isRagdoll) | (!eva.rigidbody.isKinematic);
+			Rigidbody rigidbody = null;
+			eva.GetComponentCached<Rigidbody>(ref rigidbody);
+			return (!eva.isEnabled) | (!eva.isRagdoll) | (!rigidbody.isKinematic);
         }
         /// <summary>
         /// Move the current kerbal to target.
@@ -411,8 +413,13 @@ namespace MSD.EvaFollower
 
                     eva.part.vessel.SetRotation(result);
 
+					Rigidbody rigidbody = null;
+					eva.GetComponentCached<Rigidbody>(ref rigidbody);
+
                     //move
-                    eva.rigidbody.MovePosition(eva.rigidbody.position + move);
+					if(rigidbody != null){
+						rigidbody.MovePosition(rigidbody.position + move);
+					}
                 }
             }
 

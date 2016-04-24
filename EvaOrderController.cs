@@ -60,10 +60,14 @@ namespace MSD.EvaFollower
             _cursor.SetWidth(0.05f, 0.05f);
             _cursor.SetColors(Color.green, Color.green);
 
-            _cursor.renderer.enabled = false;
-            _cursor.renderer.castShadows = false;
-            _cursor.renderer.receiveShadows = false;
+			Renderer _renderer = null;
+			_cursor.GetComponentCached<Renderer> (ref _renderer);
 
+			if (_renderer != null) {
+				_renderer.enabled = false;
+				_renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;				
+				_renderer.receiveShadows = false;
+			}
             int segments = 32;
             _cursor.SetVertexCount(segments);
 
@@ -175,8 +179,13 @@ namespace MSD.EvaFollower
             lineRenderer.SetWidth(0.05f, 0.05f);
             lineRenderer.SetColors(Color.green, Color.red);
 
-            lineRenderer.renderer.castShadows = false;
-            lineRenderer.renderer.receiveShadows = false;
+			Renderer _renderer = null;
+			lineRenderer.GetComponentCached<Renderer> (ref _renderer);
+
+			if (_renderer != null) {
+				_renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+				_renderer.receiveShadows = false;
+			}
 
             int segments = 32;
 
@@ -211,7 +220,9 @@ namespace MSD.EvaFollower
         private void ShowCursor()
         {
             showCursor = true;
-            _cursor.renderer.enabled = false;
+			Renderer _renderer = null;
+			_cursor.GetComponentCached<Renderer> (ref _renderer);
+            _renderer.enabled = false;
         }
 
         /// <summary>
@@ -220,7 +231,9 @@ namespace MSD.EvaFollower
         private void DisableCursor()
         {
             showCursor = false;
-            _cursor.renderer.enabled = false;
+			Renderer _renderer = null;
+			_cursor.GetComponentCached<Renderer> (ref _renderer);
+            _renderer.enabled = false;
 
             _cursor.SetColors(Color.green, Color.green);
             _animatedCursor = false;
@@ -392,8 +405,11 @@ namespace MSD.EvaFollower
                                 if (!vessel.loaded)
                                     return;
 
+								var camera = GetComponent<Camera>();
+
                                 //Calculate distance.
-                                var distance = Mathf.Abs(Vector3.Distance(vessel.GetWorldPos3D(), camera.transform.position));
+                                var distance = Mathf.Abs(
+									Vector3.Distance(vessel.GetWorldPos3D(), camera.transform.position));
 
                                 if (target == null)
                                 {
@@ -597,9 +613,14 @@ namespace MSD.EvaFollower
             debugLine.SetWidth(0.05f, 0.05f);
             debugLine.SetColors(Color.green, Color.red);
 
-            debugLine.renderer.castShadows = false;
-            debugLine.renderer.receiveShadows = false;
-            debugLine.renderer.enabled = true;
+			Renderer _renderer = null;
+			debugLine.GetComponentCached<Renderer> (ref _renderer);
+
+			if (_renderer) {
+				_renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+				_renderer.receiveShadows = false;
+				_renderer.enabled = true;
+			}
 
             debugLine.SetVertexCount(0);
         }
