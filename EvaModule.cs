@@ -54,6 +54,10 @@ namespace MSD.EvaFollower
             if (!currentContainer.Loaded)
                 return;
 
+			if (!currentContainer.EVA.vessel.Landed) {
+				return; 
+			}
+
             if (currentContainer.mode == Mode.None)
             {
                 Events["Follow"].active = true;
@@ -65,7 +69,7 @@ namespace MSD.EvaFollower
                 Events["Follow"].active = false;
                 Events["Stay"].active = true;
             }
-            else if (currentContainer.mode == Mode.Patrol)
+			else if (currentContainer.mode == Mode.Patrol)
             {
                 if (currentContainer.AllowRunning)
                 {

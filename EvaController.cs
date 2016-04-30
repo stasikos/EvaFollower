@@ -25,7 +25,7 @@ namespace MSD.EvaFollower
             GameEvents.onCrewOnEva.Add(OnCrewOnEva);
             GameEvents.onCrewBoardVessel.Add(OnCrewBoardVessel);
 //            GameEvents.onCrewKilled.Add(OnCrewKilled);
-            GameEvents.onVesselWillDestroy.Add(VesselDest);
+            GameEvents.onVesselWillDestroy.Add(VesselDestroyed);
 
             GameEvents.onGameStateSave.Add(OnSave);
             GameEvents.onFlightReady.Add(onFlightReadyCallback);
@@ -42,7 +42,7 @@ namespace MSD.EvaFollower
             GameEvents.onCrewOnEva.Remove(OnCrewOnEva);
             GameEvents.onCrewBoardVessel.Remove(OnCrewBoardVessel);
 //            GameEvents.onCrewKilled.Remove(OnCrewKilled);
-            GameEvents.onVesselWillDestroy.Add(VesselDest);
+            GameEvents.onVesselWillDestroy.Add(VesselDestroyed);
 
             GameEvents.onGameStateSave.Remove(OnSave);
             GameEvents.onFlightReady.Remove(onFlightReadyCallback);
@@ -129,8 +129,8 @@ namespace MSD.EvaFollower
             //Unload(report.origin.vessel, true);
         }
 */
-        public void VesselDest(Vessel report) {
-            EvaDebug.DebugLog("VesselDest()");
+        public void VesselDestroyed(Vessel report) {
+            EvaDebug.DebugLog("VesselDestroyed()");
 		if (report.isEVA) Unload(report, true);
         }
 

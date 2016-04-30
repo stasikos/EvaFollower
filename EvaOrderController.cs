@@ -109,7 +109,7 @@ namespace MSD.EvaFollower
             }
         }
 
-                /// <summary>
+        /// <summary>
         /// Update the selection model position.
         /// </summary>
         /// <param name="eva"></param>
@@ -568,6 +568,10 @@ namespace MSD.EvaFollower
         /// <param name="_eva"></param>
         private void SelectEva(EvaContainer container)
         {
+			if (!container.EVA.vessel.LandedOrSplashed) {
+				return;
+			}
+
             ++selectedKerbals;
             container.Selected = true;
 
