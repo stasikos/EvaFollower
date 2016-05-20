@@ -337,10 +337,7 @@ namespace MSD.EvaFollower
                         _selection.y += _selection.height;
                         _selection.height = -_selection.height;
                     }
-
-
-					EvaController.instance.debug = _selection.ToString();
-
+						
                     _startClick = -Vector3.one;
                 }
 

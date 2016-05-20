@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace MSD.EvaFollower
 {
-    class EvaContainer
+    internal class EvaContainer
     {
         public Guid flightID;
         public Mode mode = Mode.None;
@@ -254,12 +254,12 @@ namespace MSD.EvaFollower
         {
             bool lampOn = Util.IsDark(eva.transform);
 
-            if (showHelmet && !IsActive)
+            if (showHelmet)
             {
                 eva.TurnLamp(lampOn);
             }
 
-			if (IsActive && !showHelmet && eva.lampOn)
+			if (!showHelmet && eva.lampOn)
             {               
                eva.TurnLamp(false);
             }

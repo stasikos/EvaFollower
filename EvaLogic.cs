@@ -1,12 +1,20 @@
 ﻿using UnityEngine;
 using System.Diagnostics;
 using System;
+using System.Collections.Generic;
 
 namespace MSD.EvaFollower
 {
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class EvaLogic : MonoBehaviour
     {
+		//List<IDetection> detectionSystems = new List<IDetection>();
+
+		public EvaLogic(){
+
+			//detectionSystems.Add (new DeadSpaceDetection ());
+		}
+
         public void Start()
         {
             EvaDebug.DebugWarning("EvaLogic.Start()");
@@ -16,6 +24,13 @@ namespace MSD.EvaFollower
         {
             EvaDebug.DebugWarning("EvaLogic.OnDestroy()");
         }
+
+		public void FixedUpdate(){
+			// Update detection systems.
+			//foreach (var detection in detectionSystems) {
+			//	detection.UpdateMap (EvaController.instance.collection);
+			//}
+		}
 
         public void Update()
         {
@@ -35,7 +50,7 @@ namespace MSD.EvaFollower
 					container.EVA.PackToggle ();
 				}
 			}
-
+				
             try
             {
                 foreach (EvaContainer eva in EvaController.instance.collection.ToArray())

@@ -64,7 +64,7 @@ namespace MSD.EvaFollower
 			str += Environment.NewLine + eva.vessel.transform.forward.ToString ();
 			str += Environment.NewLine + eva.vessel.transform.right.ToString ();
 
-			EvaController.instance.debug = str;
+			//EvaController.instance.debug = str;
 
 			Position = position;
 			Position += offset;

@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace MSD.EvaFollower
 {
-	public interface IDetection
+	interface IDetection
 	{
-		bool Evaluate (Vector3d position);
+		void UpdateMap (List<EvaContainer> collection);
 		void Debug();
 	}
 }
