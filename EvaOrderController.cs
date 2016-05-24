@@ -20,6 +20,7 @@ namespace MSD.EvaFollower
 
         //Cursor variables
         private bool showCursor = false;
+	
         private RaycastHit _cursorHit = new RaycastHit();
         private Vector3 _cursorPosition;
         private Quaternion _cursorRotation;
@@ -247,7 +248,10 @@ namespace MSD.EvaFollower
         {
             if (gameUIToggle)
             {
-                if (_startClick != -Vector3.one && _selection.width != 0 && _selection.height != 0)
+				var visibleBox = _selection.width != 0 && _selection.height != 0;
+				var noWindow = GUIUtility.hotControl == 0;
+					
+				if (_startClick != -Vector3.one && visibleBox && noWindow)
                 {
                     GUI.color = new Color(1, 1, 1, 0.15f);
                     GUI.DrawTexture(_selection, _selectionHighlight);
@@ -264,6 +268,7 @@ namespace MSD.EvaFollower
         {
             gameUIToggle = false;
         }
+
 
         public void Update()
         {
