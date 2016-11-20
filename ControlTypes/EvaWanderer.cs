@@ -48,7 +48,7 @@ namespace MSD.EvaFollower
 		}
 
 		private void GenerateNewPosition(){
-			Vector3d position = eva.vessel.findWorldCenterOfMass();
+			Vector3d position = eva.vessel.CoMD;
 
 			//Vector3d eastUnit = eva.vessel.mainBody.getRFrmVel(position).normalized; //uses the rotation of the body's frame to determine "east"
 			//Vector3d upUnit = (eva.vessel - eva.vessel.mainBody.position).normalized;
